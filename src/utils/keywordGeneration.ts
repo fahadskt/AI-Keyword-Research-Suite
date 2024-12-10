@@ -1,70 +1,99 @@
-import { KeywordCluster, KeywordMetrics, KeywordVariation } from '../types';
+import { KeywordCluster, KeywordMetrics } from '../types';
+import { generateKeywordsWithOpenAI, generateKeywordsWithAnthropic, generateKeywordsWithGemini } from './api';
+import { ModelType } from '../context/ApiKeyContext';
 
-export const analyzeKeyword = (keyword: string): KeywordMetrics => {
-  // Mock analysis - in a real app, this would call SEO APIs
-  return {
-    keyword,
-    searchVolume: Math.floor(Math.random() * 10000),
-    difficulty: Math.floor(Math.random() * 100),
-    cpc: (Math.random() * 5).toFixed(2),
-    competition: Math.random().toFixed(2),
-  };
+export const analyzeKeyword = async (
+  keyword: string, 
+  apiKey: string,
+  model: ModelType
+): Promise<KeywordMetrics> => {
+  try {
+    let response;
+    switch (model) {
+      case 'chatgpt':
+        response = await generateKeywordsWithOpenAI(apiKey, keyword);
+        break;
+      case 'anthropic':
+        response = await generateKeywordsWithAnthropic(apiKey, keyword);
+        break;
+      case 'gemini':
+        response = await generateKeywordsWithGemini(apiKey, keyword);
+        break;
+      default:
+        throw new Error('Invalid model selected');
+    }
+    
+    return {
+      keyword,
+      searchVolume: response.metrics.searchVolume,
+      difficulty: response.metrics.difficulty,
+      cpc: response.metrics.cpc.toString(),
+      competition: response.metrics.competition.toString(),
+    };
+  } catch (error) {
+    console.error('Error analyzing keyword:', error);
+    throw error;
+  }
 };
 
-export const generateKeywordsFromNiche = async (niche: string, apiKey: string, model: string): Promise<string[]> => {
-  // This would normally call the AI API
-  // For demo purposes, returning mock data
-  return [
-    `${niche} tips`,
-    `${niche} guide`,
-    `${niche} tutorial`,
-    `${niche} for beginners`,
-    `best ${niche} practices`,
-    `${niche} examples`,
-    `how to ${niche}`,
-    `${niche} strategies`,
-  ];
+export const generateKeywordsFromNiche = async (
+  niche: string, 
+  apiKey: string, 
+  model: ModelType
+): Promise<string[]> => {
+  try {
+    let response;
+    switch (model) {
+      case 'chatgpt':
+        response = await generateKeywordsWithOpenAI(apiKey, niche);
+        break;
+      case 'anthropic':
+        response = await generateKeywordsWithAnthropic(apiKey, niche);
+        break;
+      case 'gemini':
+        response = await generateKeywordsWithGemini(apiKey, niche);
+        break;
+      default:
+        throw new Error('Invalid model selected');
+    }
+    
+    return response.keywords;
+  } catch (error) {
+    console.error('Error generating keywords:', error);
+    throw error;
+  }
 };
 
-export const clusterKeywords = (
+export const clusterKeywords = async (
   keywords: string[],
   minGroupSize: number,
   maxGroupSize: number,
-  similarityThreshold: number
-): KeywordCluster[] => {
-  // Simple clustering implementation for demo
+  _similarityThreshold: number,
+  apiKey: string,
+  model: ModelType
+): Promise<KeywordCluster[]> => {
   const clusters: KeywordCluster[] = [];
   let currentCluster: string[] = [];
 
-  keywords.forEach((keyword) => {
+  for (const keyword of keywords) {
     if (currentCluster.length >= maxGroupSize) {
+      const metrics = await analyzeKeyword(currentCluster[0], apiKey, model);
       clusters.push({
         name: `Cluster ${clusters.length + 1}`,
         keywords: [...currentCluster],
-        metrics: {
-          keyword: currentCluster[0],
-          searchVolume: Math.floor(Math.random() * 10000),
-          difficulty: Math.floor(Math.random() * 100),
-          cpc: (Math.random() * 5).toFixed(2),
-          competition: Math.random().toFixed(2),
-        }
+        metrics
       });
       currentCluster = [];
     }
     currentCluster.push(keyword);
-  });
+  }
 
   if (currentCluster.length >= minGroupSize) {
+    const metrics = await analyzeKeyword(currentCluster[0], apiKey, model);
     clusters.push({
       name: `Cluster ${clusters.length + 1}`,
       keywords: currentCluster,
-      metrics: {
-        keyword: currentCluster[0],
-        searchVolume: Math.floor(Math.random() * 10000),
-        difficulty: Math.floor(Math.random() * 100),
-        cpc: (Math.random() * 5).toFixed(2),
-        competition: Math.random().toFixed(2),
-      }
+      metrics
     });
   }
 
