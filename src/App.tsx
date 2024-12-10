@@ -69,29 +69,82 @@ function AppContent() {
       setGeneratedKeywords(generated);
 
       // Create and set categories
+      const INTENT_TYPES = ['Informational', 'Commercial', 'Transactional', 'Navigational'] as const;
+      const SEASONALITY_TYPES = ['Stable', 'Seasonal', 'Trending'] as const;
+      const CONTENT_TYPES = ['Article', 'Guide', 'List', 'How-to', 'Review'] as const;
+      const COMPETITION_LEVELS = ['Low', 'Medium', 'High'] as const;
+
+      const generateMockKeyword = (kw: string): KeywordMetric => {
+        const getRandomElement = <T extends readonly any[]>(array: T): T[number] => {
+          return array[Math.floor(Math.random() * array.length)];
+        };
+
+        return {
+          keyword: kw,
+          volume: Math.floor(Math.random() * 10000),
+          competition: getRandomElement(COMPETITION_LEVELS),
+          difficulty: Math.floor(Math.random() * 100),
+          opportunity: Math.floor(Math.random() * 100),
+          cpc: Math.random() * 10,
+          intent: getRandomElement(INTENT_TYPES),
+          serp_features: ['Featured Snippet', 'People Also Ask', 'Video Results', 'Image Pack']
+            .slice(0, Math.floor(Math.random() * 4) + 1),
+          trend: Array.from({ length: 12 }, () => Math.floor(Math.random() * 1000)),
+          seasonality: getRandomElement(SEASONALITY_TYPES),
+          ranking_difficulty: {
+            score: Math.floor(Math.random() * 100),
+            factors: {
+              competition: Math.floor(Math.random() * 100),
+              content_depth: Math.floor(Math.random() * 100),
+              authority_needed: Math.floor(Math.random() * 100),
+            }
+          },
+          competitors: Array.from({ length: 5 }, () => ({
+            domain: `competitor${Math.floor(Math.random() * 100)}.com`,
+            authority: Math.floor(Math.random() * 100),
+            relevance: Math.floor(Math.random() * 100),
+            backlinks: Math.floor(Math.random() * 10000),
+            ranking: Math.floor(Math.random() * 10) + 1
+          })),
+          contentGap: {
+            missingTopics: ['Topic 1', 'Topic 2', 'Topic 3'],
+            contentSuggestions: Array.from({ length: 3 }, () => ({
+              type: getRandomElement(CONTENT_TYPES),
+              title: `Content suggestion for ${kw}`,
+              description: 'This is a content suggestion description',
+              estimatedDifficulty: Math.floor(Math.random() * 100),
+              estimatedImpact: Math.floor(Math.random() * 100)
+            }))
+          },
+          searchIntent: {
+            primary: getRandomElement(INTENT_TYPES),
+            secondary: ['Brand', 'Product', 'Service'].slice(0, Math.floor(Math.random() * 3) + 1),
+            userQuestions: ['Question 1?', 'Question 2?', 'Question 3?']
+          },
+          performance: {
+            clickThroughRate: Math.random(),
+            impressionsPerMonth: Math.floor(Math.random() * 10000),
+            averagePosition: Math.random() * 10
+          },
+          localMetrics: {
+            localSearchVolume: Math.floor(Math.random() * 5000),
+            topRegions: Array.from({ length: 5 }, () => ({
+              region: `Region ${Math.floor(Math.random() * 10)}`,
+              volume: Math.floor(Math.random() * 1000)
+            })),
+            deviceDistribution: {
+              mobile: 60,
+              desktop: 30,
+              tablet: 10
+            }
+          }
+        };
+      };
+
       const newCategories: KeywordCategory[] = [
         {
           name: 'Content marketing',
-          keywords: generated.slice(0, 5).map(kw => ({
-            keyword: kw,
-            volume: Math.floor(Math.random() * 10000),
-            competition: Math.random() > 0.5 ? 'High' : Math.random() > 0.5 ? 'Medium' : 'Low',
-            difficulty: Math.floor(Math.random() * 100),
-            opportunity: Math.floor(Math.random() * 100),
-            cpc: Math.random() * 10,
-            intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'][Math.floor(Math.random() * 4)] as any,
-            serp_features: ['Featured Snippet', 'People Also Ask', 'Video Results', 'Image Pack'].slice(0, Math.floor(Math.random() * 4) + 1),
-            trend: Array.from({ length: 12 }, () => Math.floor(Math.random() * 1000)),
-            seasonality: ['Stable', 'Seasonal', 'Trending'][Math.floor(Math.random() * 3)] as any,
-            ranking_difficulty: {
-              score: Math.floor(Math.random() * 100),
-              factors: {
-                competition: Math.floor(Math.random() * 100),
-                content_depth: Math.floor(Math.random() * 100),
-                authority_needed: Math.floor(Math.random() * 100),
-              }
-            }
-          })),
+          keywords: generated.slice(0, 5).map(generateMockKeyword),
           summary: {
             totalVolume: Math.floor(Math.random() * 50000),
             avgDifficulty: Math.floor(Math.random() * 100),
@@ -102,26 +155,7 @@ function AppContent() {
         },
         {
           name: 'Content overview',
-          keywords: generated.slice(5, 10).map(kw => ({
-            keyword: kw,
-            volume: Math.floor(Math.random() * 10000),
-            competition: Math.random() > 0.5 ? 'High' : Math.random() > 0.5 ? 'Medium' : 'Low',
-            difficulty: Math.floor(Math.random() * 100),
-            opportunity: Math.floor(Math.random() * 100),
-            cpc: Math.random() * 10,
-            intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'][Math.floor(Math.random() * 4)] as any,
-            serp_features: ['Featured Snippet', 'People Also Ask', 'Video Results', 'Image Pack'].slice(0, Math.floor(Math.random() * 4) + 1),
-            trend: Array.from({ length: 12 }, () => Math.floor(Math.random() * 1000)),
-            seasonality: ['Stable', 'Seasonal', 'Trending'][Math.floor(Math.random() * 3)] as any,
-            ranking_difficulty: {
-              score: Math.floor(Math.random() * 100),
-              factors: {
-                competition: Math.floor(Math.random() * 100),
-                content_depth: Math.floor(Math.random() * 100),
-                authority_needed: Math.floor(Math.random() * 100),
-              }
-            }
-          })),
+          keywords: generated.slice(5, 10).map(generateMockKeyword),
           summary: {
             totalVolume: Math.floor(Math.random() * 50000),
             avgDifficulty: Math.floor(Math.random() * 100),
@@ -132,26 +166,7 @@ function AppContent() {
         },
         {
           name: 'Social media',
-          keywords: generated.slice(10, 15).map(kw => ({
-            keyword: kw,
-            volume: Math.floor(Math.random() * 10000),
-            competition: Math.random() > 0.5 ? 'High' : Math.random() > 0.5 ? 'Medium' : 'Low',
-            difficulty: Math.floor(Math.random() * 100),
-            opportunity: Math.floor(Math.random() * 100),
-            cpc: Math.random() * 10,
-            intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'][Math.floor(Math.random() * 4)] as any,
-            serp_features: ['Featured Snippet', 'People Also Ask', 'Video Results', 'Image Pack'].slice(0, Math.floor(Math.random() * 4) + 1),
-            trend: Array.from({ length: 12 }, () => Math.floor(Math.random() * 1000)),
-            seasonality: ['Stable', 'Seasonal', 'Trending'][Math.floor(Math.random() * 3)] as any,
-            ranking_difficulty: {
-              score: Math.floor(Math.random() * 100),
-              factors: {
-                competition: Math.floor(Math.random() * 100),
-                content_depth: Math.floor(Math.random() * 100),
-                authority_needed: Math.floor(Math.random() * 100),
-              }
-            }
-          })),
+          keywords: generated.slice(10, 15).map(generateMockKeyword),
           summary: {
             totalVolume: Math.floor(Math.random() * 50000),
             avgDifficulty: Math.floor(Math.random() * 100),

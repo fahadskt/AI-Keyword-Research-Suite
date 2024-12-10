@@ -88,4 +88,44 @@ export interface KeywordMetric {
       authority_needed: number;
     };
   };
+  competitors: CompetitorInfo[];
+  contentGap: {
+    missingTopics: string[];
+    contentSuggestions: ContentSuggestion[];
+  };
+  searchIntent: {
+    primary: 'Informational' | 'Commercial' | 'Transactional' | 'Navigational';
+    secondary: string[];
+    userQuestions: string[];
+  };
+  performance: {
+    clickThroughRate: number;
+    impressionsPerMonth: number;
+    averagePosition: number;
+  };
+  localMetrics?: {
+    localSearchVolume: number;
+    topRegions: { region: string; volume: number }[];
+    deviceDistribution: {
+      mobile: number;
+      desktop: number;
+      tablet: number;
+    };
+  };
+}
+
+export interface CompetitorInfo {
+  domain: string;
+  authority: number;
+  relevance: number;
+  backlinks: number;
+  ranking: number;
+}
+
+export interface ContentSuggestion {
+  type: 'Article' | 'Guide' | 'List' | 'How-to' | 'Review';
+  title: string;
+  description: string;
+  estimatedDifficulty: number;
+  estimatedImpact: number;
 }

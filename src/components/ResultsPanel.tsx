@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { KeywordCategory, KeywordMetric } from '../types';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { KeywordCategory, KeywordMetric, CompetitorInfo, ContentSuggestion } from '../types';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 interface ResultsPanelProps {
   keywords: string[];
@@ -13,7 +13,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<string>(categories[0]?.name || '');
   const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
-  const [view, setView] = useState<'table' | 'analysis' | 'trends'>('table');
+  const [view, setView] = useState<'table' | 'analysis' | 'trends' | 'competitors' | 'content-gap'>('table');
 
   // Helper function to format numbers
   const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
@@ -112,7 +112,172 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Competitor Analysis */}
+      {renderCompetitorAnalysis(keyword.competitors)}
+
+      {/* Content Suggestions */}
+      {renderContentSuggestions(keyword.contentGap.contentSuggestions)}
+
+      {/* Search Intent Analysis */}
+      {renderSearchIntentDetails(keyword.searchIntent)}
+
+      {/* Local Metrics */}
+      {renderLocalMetrics(keyword.localMetrics)}
     </div>
+  );
+
+  const renderCompetitorAnalysis = (competitors: CompetitorInfo[]) => (
+    <div className="mb-6">
+      <h4 className="text-sm font-medium mb-4">Top Competitors</h4>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="text-xs text-gray-500">
+              <th className="pb-2 text-left">Domain</th>
+              <th className="pb-2 text-left">Authority</th>
+              <th className="pb-2 text-left">Relevance</th>
+              <th className="pb-2 text-left">Backlinks</th>
+              <th className="pb-2 text-left">Ranking</th>
+            </tr>
+          </thead>
+          <tbody>
+            {competitors.map((competitor, index) => (
+              <tr key={index} className="border-t border-gray-100">
+                <td className="py-2">{competitor.domain}</td>
+                <td className="py-2">
+                  <div className="flex items-center">
+                    <span className="mr-2">{competitor.authority}</span>
+                    {renderMetricBar(competitor.authority, 'difficulty')}
+                  </div>
+                </td>
+                <td className="py-2">{competitor.relevance}%</td>
+                <td className="py-2">{formatNumber(competitor.backlinks)}</td>
+                <td className="py-2">#{competitor.ranking}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderContentSuggestions = (suggestions: ContentSuggestion[]) => (
+    <div className="mb-6">
+      <h4 className="text-sm font-medium mb-4">Content Opportunities</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {suggestions.map((suggestion, index) => (
+          <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium px-2 py-1 bg-violet-100 text-violet-700 rounded-full">
+                {suggestion.type}
+              </span>
+              <div className="flex items-center space-x-2">
+                <div className="text-xs text-gray-500">Impact</div>
+                {renderMetricBar(suggestion.estimatedImpact, 'opportunity')}
+              </div>
+            </div>
+            <h5 className="font-medium mb-1">{suggestion.title}</h5>
+            <p className="text-sm text-gray-600">{suggestion.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderSearchIntentDetails = (intent: KeywordMetric['searchIntent']) => (
+    <div className="mb-6">
+      <h4 className="text-sm font-medium mb-4">Search Intent Analysis</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <h5 className="text-sm font-medium mb-2">Intent Breakdown</h5>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span>Primary Intent</span>
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                {intent.primary}
+              </span>
+            </div>
+            <div>
+              <div className="text-sm mb-1">Secondary Intents</div>
+              <div className="flex flex-wrap gap-2">
+                {intent.secondary.map((sec, index) => (
+                  <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+                    {sec}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <h5 className="text-sm font-medium mb-2">Common User Questions</h5>
+          <ul className="space-y-2">
+            {intent.userQuestions.map((question, index) => (
+              <li key={index} className="text-sm text-gray-600">• {question}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderLocalMetrics = (localMetrics: KeywordMetric['localMetrics']) => (
+    localMetrics && (
+      <div className="mb-6">
+        <h4 className="text-sm font-medium mb-4">Local Search Analysis</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <h5 className="text-sm font-medium mb-2">Device Distribution</h5>
+            <div className="h-40">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    dataKey="value"
+                    nameKey="name"
+                    data={[
+                      { name: 'Mobile', value: localMetrics.deviceDistribution.mobile },
+                      { name: 'Desktop', value: localMetrics.deviceDistribution.desktop },
+                      { name: 'Tablet', value: localMetrics.deviceDistribution.tablet },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    label
+                  >
+                    {[
+                      '#8884d8',
+                      '#82ca9d',
+                      '#ffc658'
+                    ].map((color, index) => (
+                      <Cell key={`cell-${index}`} fill={color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <h5 className="text-sm font-medium mb-2">Top Regions</h5>
+            <div className="space-y-2">
+              {localMetrics.topRegions.map((region, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <span className="text-sm">{region.region}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">{formatNumber(region.volume)}</span>
+                    {renderMetricBar((region.volume / localMetrics.localSearchVolume) * 100, 'opportunity')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   );
 
   return (
@@ -176,6 +341,18 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
           onClick={() => setView('trends')}
         >
           Trends
+        </button>
+        <button
+          className={`px-4 py-2 font-medium text-sm ${view === 'competitors' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-gray-500'}`}
+          onClick={() => setView('competitors')}
+        >
+          Competitors
+        </button>
+        <button
+          className={`px-4 py-2 font-medium text-sm ${view === 'content-gap' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-gray-500'}`}
+          onClick={() => setView('content-gap')}
+        >
+          Content Gap
         </button>
       </div>
 
