@@ -11,9 +11,11 @@ import { ApiKeyProvider, useApiKeys } from './context/ApiKeyContext';
 import { generateKeywordsFromNiche, clusterKeywords } from './utils/keywordGeneration';
 import { KeywordCluster } from './types';
 
+type ModelType = 'chatgpt' | 'anthropic' | 'gemini' | 'google';
+
 function AppContent() {
-  const { apiKeys, hasValidKeys, updateApiKeys } = useApiKeys();
-  const [selectedModel, setSelectedModel] = useState('chatgpt');
+  const { apiKeys, hasValidKeys } = useApiKeys();
+  const [selectedModel, setSelectedModel] = useState<ModelType>('gemini');
   const [keywords, setKeywords] = useState('');
   const [generatedKeywords, setGeneratedKeywords] = useState<string[]>([]);
   const [keywordClusters, setKeywordClusters] = useState<KeywordCluster[]>([]);
@@ -31,13 +33,31 @@ function AppContent() {
     }));
   };
 
+  const getApiKeyForModel = (model: ModelType): string | undefined => {
+    switch (model) {
+      case 'chatgpt':
+        return apiKeys.openai;
+      case 'anthropic':
+        return apiKeys.anthropic;
+      case 'gemini':
+        return apiKeys.gemini;
+      case 'google':
+        return apiKeys.google;
+    }
+  };
+
   const handleGenerateKeywords = async () => {
-    if (!keywords.trim() || !hasValidKeys) {
-      alert('Please enter keywords and set up your API keys');
+    if (!keywords.trim()) {
+      alert('Please enter keywords');
       return;
     }
 
-    const currentApiKey = apiKeys[selectedModel as keyof typeof apiKeys];
+    if (!hasValidKeys) {
+      alert('Please set up your API keys first');
+      return;
+    }
+
+    const currentApiKey = getApiKeyForModel(selectedModel);
     if (!currentApiKey) {
       alert(`Please set up your ${selectedModel} API key first`);
       return;
@@ -70,11 +90,11 @@ function AppContent() {
         <Hero />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div>
-            <ApiKeySettings onKeysUpdate={updateApiKeys} initialKeys={apiKeys} />
+            <ApiKeySettings />
             <div className="mt-6">
               <ModelSelector
                 selectedModel={selectedModel}
-                onModelSelect={setSelectedModel}
+                onModelSelect={(model: ModelType) => setSelectedModel(model)}
               />
             </div>
           </div>

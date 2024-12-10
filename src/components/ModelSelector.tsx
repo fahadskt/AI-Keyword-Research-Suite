@@ -1,13 +1,15 @@
 import React from 'react';
 
+type ModelType = 'chatgpt' | 'anthropic' | 'gemini' | 'google';
+
 interface ModelOption {
-  id: string;
+  id: ModelType;
   name: string;
 }
 
 interface ModelSelectorProps {
-  selectedModel: string;
-  onModelSelect: (model: string) => void;
+  selectedModel: ModelType;
+  onModelSelect: (model: ModelType) => void;
 }
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelSelect }) => {
@@ -15,6 +17,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelSel
     { id: 'chatgpt', name: 'ChatGPT' },
     { id: 'anthropic', name: 'Anthropic' },
     { id: 'gemini', name: 'Gemini' },
+    { id: 'google', name: 'Google AI' },
   ];
 
   return (
@@ -26,7 +29,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelSel
         </svg>
         Select AI Model
       </h3>
-      <div className="flex space-x-3">
+      <div className="flex flex-wrap gap-3">
         {models.map((model) => (
           <button
             key={model.id}

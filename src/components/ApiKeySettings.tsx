@@ -1,33 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useApiKeys } from '../context/ApiKeyContext';
 
 interface ApiKeys {
   openai?: string;
   anthropic?: string;
   google?: string;
+  gemini?: string;
 }
 
-interface ApiKeySettingsProps {
-  onKeysUpdate: (keys: ApiKeys) => void;
-  initialKeys?: ApiKeys;
-}
-
-const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ onKeysUpdate, initialKeys }) => {
-  const [apiKeys, setApiKeys] = useState<ApiKeys>(initialKeys || {});
+const ApiKeySettings: React.FC = () => {
+  const { apiKeys, updateApiKeys } = useApiKeys();
   const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    // Load saved keys from localStorage on component mount
-    const savedKeys = localStorage.getItem('aiModelKeys');
-    if (savedKeys) {
-      setApiKeys(JSON.parse(savedKeys));
-    }
-  }, []);
 
   const handleKeyChange = (provider: keyof ApiKeys, value: string) => {
     const newKeys = { ...apiKeys, [provider]: value };
-    setApiKeys(newKeys);
-    localStorage.setItem('aiModelKeys', JSON.stringify(newKeys));
-    onKeysUpdate(newKeys);
+    updateApiKeys(newKeys);
   };
 
   return (
@@ -63,6 +50,18 @@ const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ onKeysUpdate, initialKe
             value={apiKeys.anthropic || ''}
             onChange={(e) => handleKeyChange('anthropic', e.target.value)}
             placeholder="Enter Anthropic API key"
+            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Gemini API Key
+          </label>
+          <input
+            type={isVisible ? "text" : "password"}
+            value={apiKeys.gemini || ''}
+            onChange={(e) => handleKeyChange('gemini', e.target.value)}
+            placeholder="Enter Gemini API key"
             className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>

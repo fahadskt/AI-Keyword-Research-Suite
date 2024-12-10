@@ -4,6 +4,7 @@ interface ApiKeys {
   openai?: string;
   anthropic?: string;
   google?: string;
+  gemini?: string;
 }
 
 interface ApiKeyContextType {
