@@ -77,8 +77,28 @@ function AppContent() {
             volume: Math.floor(Math.random() * 10000),
             competition: Math.random() > 0.5 ? 'High' : Math.random() > 0.5 ? 'Medium' : 'Low',
             difficulty: Math.floor(Math.random() * 100),
-            opportunity: Math.floor(Math.random() * 100)
-          }))
+            opportunity: Math.floor(Math.random() * 100),
+            cpc: Math.random() * 10,
+            intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'][Math.floor(Math.random() * 4)] as any,
+            serp_features: ['Featured Snippet', 'People Also Ask', 'Video Results', 'Image Pack'].slice(0, Math.floor(Math.random() * 4) + 1),
+            trend: Array.from({ length: 12 }, () => Math.floor(Math.random() * 1000)),
+            seasonality: ['Stable', 'Seasonal', 'Trending'][Math.floor(Math.random() * 3)] as any,
+            ranking_difficulty: {
+              score: Math.floor(Math.random() * 100),
+              factors: {
+                competition: Math.floor(Math.random() * 100),
+                content_depth: Math.floor(Math.random() * 100),
+                authority_needed: Math.floor(Math.random() * 100),
+              }
+            }
+          })),
+          summary: {
+            totalVolume: Math.floor(Math.random() * 50000),
+            avgDifficulty: Math.floor(Math.random() * 100),
+            avgCpc: Math.random() * 10,
+            topIntent: ['Informational', 'Commercial', 'Transactional'][Math.floor(Math.random() * 3)],
+            growthRate: Math.floor(Math.random() * 200) - 100,
+          }
         },
         {
           name: 'Content overview',
@@ -87,8 +107,28 @@ function AppContent() {
             volume: Math.floor(Math.random() * 10000),
             competition: Math.random() > 0.5 ? 'High' : Math.random() > 0.5 ? 'Medium' : 'Low',
             difficulty: Math.floor(Math.random() * 100),
-            opportunity: Math.floor(Math.random() * 100)
-          }))
+            opportunity: Math.floor(Math.random() * 100),
+            cpc: Math.random() * 10,
+            intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'][Math.floor(Math.random() * 4)] as any,
+            serp_features: ['Featured Snippet', 'People Also Ask', 'Video Results', 'Image Pack'].slice(0, Math.floor(Math.random() * 4) + 1),
+            trend: Array.from({ length: 12 }, () => Math.floor(Math.random() * 1000)),
+            seasonality: ['Stable', 'Seasonal', 'Trending'][Math.floor(Math.random() * 3)] as any,
+            ranking_difficulty: {
+              score: Math.floor(Math.random() * 100),
+              factors: {
+                competition: Math.floor(Math.random() * 100),
+                content_depth: Math.floor(Math.random() * 100),
+                authority_needed: Math.floor(Math.random() * 100),
+              }
+            }
+          })),
+          summary: {
+            totalVolume: Math.floor(Math.random() * 50000),
+            avgDifficulty: Math.floor(Math.random() * 100),
+            avgCpc: Math.random() * 10,
+            topIntent: ['Informational', 'Commercial', 'Transactional'][Math.floor(Math.random() * 3)],
+            growthRate: Math.floor(Math.random() * 200) - 100,
+          }
         },
         {
           name: 'Social media',
@@ -97,8 +137,28 @@ function AppContent() {
             volume: Math.floor(Math.random() * 10000),
             competition: Math.random() > 0.5 ? 'High' : Math.random() > 0.5 ? 'Medium' : 'Low',
             difficulty: Math.floor(Math.random() * 100),
-            opportunity: Math.floor(Math.random() * 100)
-          }))
+            opportunity: Math.floor(Math.random() * 100),
+            cpc: Math.random() * 10,
+            intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'][Math.floor(Math.random() * 4)] as any,
+            serp_features: ['Featured Snippet', 'People Also Ask', 'Video Results', 'Image Pack'].slice(0, Math.floor(Math.random() * 4) + 1),
+            trend: Array.from({ length: 12 }, () => Math.floor(Math.random() * 1000)),
+            seasonality: ['Stable', 'Seasonal', 'Trending'][Math.floor(Math.random() * 3)] as any,
+            ranking_difficulty: {
+              score: Math.floor(Math.random() * 100),
+              factors: {
+                competition: Math.floor(Math.random() * 100),
+                content_depth: Math.floor(Math.random() * 100),
+                authority_needed: Math.floor(Math.random() * 100),
+              }
+            }
+          })),
+          summary: {
+            totalVolume: Math.floor(Math.random() * 50000),
+            avgDifficulty: Math.floor(Math.random() * 100),
+            avgCpc: Math.random() * 10,
+            topIntent: ['Informational', 'Commercial', 'Transactional'][Math.floor(Math.random() * 3)],
+            growthRate: Math.floor(Math.random() * 200) - 100,
+          }
         }
       ];
       

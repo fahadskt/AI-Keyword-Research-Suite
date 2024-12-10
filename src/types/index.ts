@@ -60,6 +60,13 @@ export interface SearchMetrics {
 export interface KeywordCategory {
   name: string;
   keywords: KeywordMetric[];
+  summary: {
+    totalVolume: number;
+    avgDifficulty: number;
+    avgCpc: number;
+    topIntent: string;
+    growthRate: number;
+  };
 }
 
 export interface KeywordMetric {
@@ -68,4 +75,17 @@ export interface KeywordMetric {
   competition: 'Low' | 'Medium' | 'High';
   difficulty: number;
   opportunity: number;
+  cpc: number;
+  intent: 'Informational' | 'Commercial' | 'Transactional' | 'Navigational';
+  serp_features: string[];
+  trend: number[];
+  seasonality: 'Stable' | 'Seasonal' | 'Trending';
+  ranking_difficulty: {
+    score: number;
+    factors: {
+      competition: number;
+      content_depth: number;
+      authority_needed: number;
+    };
+  };
 }
