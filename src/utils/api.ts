@@ -3,8 +3,16 @@ import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const cleanJsonResponse = (text: string): string => {
-  // Remove markdown code block markers and any surrounding whitespace
-  return text.replace(/```[a-z]*|```/g, '').trim();
+  // Remove markdown code block markers, JSON prefix, and any surrounding whitespace
+  const cleaned = text
+    .replace(/```[a-z]*|```/g, '') // Remove code block markers
+    .replace(/^JSON\s*/, '') // Remove "JSON" prefix
+    .replace(/^\s*\{/, '{') // Ensure clean object start
+    .trim();
+  
+  // For debugging
+  console.log('Cleaned JSON:', cleaned);
+  return cleaned;
 };
 
 export const generateKeywordsWithOpenAI = async (
@@ -60,8 +68,14 @@ export const generateKeywordsWithAnthropic = async (
     }
   
     const cleanedJson = cleanJsonResponse(content.text);
-    const result = JSON.parse(cleanedJson);
-    return result.keywords || [];
+    try {
+      const result = JSON.parse(cleanedJson);
+      return result.keywords || [];
+    } catch (parseError) {
+      console.error('Failed to parse Anthropic response:', cleanedJson);
+      console.error('Parse error:', parseError);
+      return [];
+    }
   } catch (error) {
     console.error('Error generating keywords with Anthropic:', error);
     return [];
@@ -78,14 +92,26 @@ export const generateKeywordsWithGemini = async (
 
     const prompt = `Generate a list of relevant keywords for the niche: ${niche}. 
       Include questions people might ask about this topic.
-      Return a JSON object with a 'keywords' array containing the keywords.`;
+      Return a JSON object in this exact format without any explanation or prefix:
+      {
+        "keywords": ["keyword1", "keyword2", ...]
+      }`;
 
     const result = await model.generateContent(prompt);
     const response = result.response;
   
+    // For debugging
+    console.log('Raw Gemini response:', response.text());
+    
     const cleanedJson = cleanJsonResponse(response.text());
-    const parsed = JSON.parse(cleanedJson);
-    return parsed.keywords || [];
+    try {
+      const parsed = JSON.parse(cleanedJson);
+      return parsed.keywords || [];
+    } catch (parseError) {
+      console.error('Failed to parse Gemini response:', cleanedJson);
+      console.error('Parse error:', parseError);
+      return [];
+    }
   } catch (error) {
     console.error('Error generating keywords with Gemini:', error);
     return [];
