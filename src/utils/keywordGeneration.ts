@@ -79,121 +79,141 @@ async function generateWithGemini(prompt: string, apiKey: string): Promise<strin
       contents: [{ 
         role: "user", 
         parts: [{ 
-          text: `You are a keyword research expert. Generate a list of keywords with metrics.
-          
-          Return a JSON object in this EXACT format (no variations allowed):
-          {
-            "mainKeywords": [
-              {
-                "keyword": "main keyword 1",
-                "volume": 1000,
-                "competition": "Low",
-                "difficulty": 30,
-                "intent": "informational",
-                "cpc": 1.5,
-                "serpFeatures": ["featured_snippet"],
-                "trend": [100, 110, 120],
-                "seasonality": "stable"
-              }
-            ],
-            "lowCompetitionKeywords": [
-              {
-                "keyword": "low comp keyword 1",
-                "volume": 500,
-                "competition": "Low",
-                "difficulty": 20,
-                "intent": "informational",
-                "cpc": 0.8,
-                "serpFeatures": ["featured_snippet"],
-                "trend": [50, 60, 70],
-                "seasonality": "stable"
-              }
-            ],
-            "longTailKeywords": [
-              {
-                "keyword": "long tail keyword 1",
-                "volume": 200,
-                "competition": "Low",
-                "difficulty": 15,
-                "intent": "informational",
-                "cpc": 0.5,
-                "serpFeatures": ["featured_snippet"],
-                "trend": [20, 25, 30],
-                "seasonality": "stable"
-              }
-            ],
-            "relatedKeywords": [
-              {
-                "keyword": "related keyword 1",
-                "volume": 800,
-                "competition": "Medium",
-                "difficulty": 40,
-                "intent": "informational",
-                "cpc": 1.2,
-                "serpFeatures": ["featured_snippet"],
-                "trend": [80, 85, 90],
-                "seasonality": "stable"
-              }
-            ]
-          }
+          text: `Generate a list of keywords with metrics. Return ONLY a JSON object with this structure:
 
-          Topic: ${prompt}
-          
-          IMPORTANT:
-          1. Follow the exact format above
-          2. Use only double quotes
-          3. No trailing commas
-          4. No comments or additional text
-          5. All numbers must be plain numbers (not strings)
-          6. All arrays must be properly terminated
-          7. All property names must match exactly
-          8. Response must be valid JSON`
+{
+  "mainKeywords": [
+    {
+      "keyword": "example",
+      "volume": 1000,
+      "competition": "Low",
+      "difficulty": 30,
+      "intent": "informational",
+      "cpc": 1.5,
+      "serpFeatures": ["featured_snippet"],
+      "trend": [100,110,120],
+      "seasonality": "stable"
+    }
+  ],
+  "lowCompetitionKeywords": [
+    {
+      "keyword": "example low comp",
+      "volume": 500,
+      "competition": "Low",
+      "difficulty": 20,
+      "intent": "informational",
+      "cpc": 0.8,
+      "serpFeatures": ["featured_snippet"],
+      "trend": [50,60,70],
+      "seasonality": "stable"
+    }
+  ],
+  "longTailKeywords": [
+    {
+      "keyword": "example long tail",
+      "volume": 200,
+      "competition": "Low",
+      "difficulty": 15,
+      "intent": "informational",
+      "cpc": 0.5,
+      "serpFeatures": ["featured_snippet"],
+      "trend": [20,25,30],
+      "seasonality": "stable"
+    }
+  ],
+  "relatedKeywords": [
+    {
+      "keyword": "example related",
+      "volume": 800,
+      "competition": "Medium",
+      "difficulty": 40,
+      "intent": "informational",
+      "cpc": 1.2,
+      "serpFeatures": ["featured_snippet"],
+      "trend": [80,85,90],
+      "seasonality": "stable"
+    }
+  ]
+}
+
+Topic: ${prompt}
+
+RULES:
+1. Return ONLY the JSON object above
+2. No markdown formatting
+3. No explanations or additional text
+4. Use double quotes for strings
+5. No trailing commas
+6. No spaces in arrays
+7. Keep property names exactly as shown
+8. Numbers must be numbers, not strings`
         }]
       }],
       generationConfig: {
-        temperature: 0.3,
-        topK: 20,
-        topP: 0.8,
+        temperature: 0.2,
+        topK: 10,
+        topP: 0.7,
         maxOutputTokens: 4000,
       },
     });
 
     const text = result.response.text();
     
-    const cleanAndValidateJSON = (input: string): string => {
-      let cleaned = input.replace(/```(?:json|JSON)?\s*|\s*```/g, '');
-      
-      const jsonStart = cleaned.indexOf('{');
-      const jsonEnd = cleaned.lastIndexOf('}') + 1;
-      if (jsonStart === -1 || jsonEnd === 0) {
-        throw new Error('No JSON object found in response');
+    const cleanJSON = (input: string): string => {
+      try {
+        let cleaned = input.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+        
+        cleaned = cleaned.replace(/```[^`]*```/g, '');
+        
+        cleaned = cleaned
+          .replace(/[\u201C\u201D]/g, '"')
+          .replace(/[\r\n\t]/g, '')
+          .replace(/,\s*([\]}])/g, '$1')
+          .replace(/([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":')
+          .replace(/:\s*'([^']*)'/g, ':"$1"')
+          .replace(/,(\s*[}\]])/g, '$1')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        if (!cleaned.startsWith('{') || !cleaned.endsWith('}')) {
+          throw new Error('Invalid JSON structure');
+        }
+
+        return cleaned;
+      } catch (error) {
+        console.error('JSON cleaning error:', error);
+        throw error;
       }
-      cleaned = cleaned.slice(jsonStart, jsonEnd);
-      
-      cleaned = cleaned
-        .replace(/[\u201C\u201D]/g, '"')
-        .replace(/[\r\n\t]/g, '')
-        .replace(/,\s*([\]}])/g, '$1')
-        .replace(/([{,])\s*([a-zA-Z0-9_]+)\s*:/g, '$1"$2":')
-        .trim();
-      
-      return cleaned;
     };
 
     try {
-      const cleanedJSON = cleanAndValidateJSON(text);
+      const cleanedJSON = cleanJSON(text);
+      console.log('Cleaned JSON:', cleanedJSON);
+      
       const parsed = JSON.parse(cleanedJSON);
       
       const requiredCategories = ['mainKeywords', 'lowCompetitionKeywords', 'longTailKeywords', 'relatedKeywords'];
       const missingCategories = requiredCategories.filter(cat => !Array.isArray(parsed[cat]));
       
       if (missingCategories.length > 0) {
-        throw new Error(`Missing or invalid categories: ${missingCategories.join(', ')}`);
+        throw new Error(`Missing categories: ${missingCategories.join(', ')}`);
       }
       
+      const requiredFields = ['keyword', 'volume', 'competition', 'difficulty', 'intent', 'cpc', 'serpFeatures', 'trend', 'seasonality'];
+      
+      for (const category of requiredCategories) {
+        for (const item of parsed[category]) {
+          const missingFields = requiredFields.filter(field => !(field in item));
+          if (missingFields.length > 0) {
+            throw new Error(`Missing fields in ${category}: ${missingFields.join(', ')}`);
+          }
+        }
+      }
+
       return extractKeywords(parsed);
     } catch (parseError) {
-      console.error('Failed to parse Gemini response:', parseError);
+      console.error('Gemini response parsing error:', parseError);
+      console.error('Raw response:', text);
       return [];
     }
   } catch (error) {
