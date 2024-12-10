@@ -1,79 +1,78 @@
-import { KeywordCluster, KeywordMetrics } from '../types';
-import { generateKeywordsWithOpenAI, generateKeywordsWithAnthropic, generateKeywordsWithGemini } from './api';
+import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 import { ModelType } from '../context/ApiKeyContext';
 
-const generateMockMetrics = (keyword: string): KeywordMetrics => ({
-  keyword,
-  searchVolume: Math.floor(Math.random() * 10000),
-  difficulty: Math.floor(Math.random() * 100),
-  cpc: (Math.random() * 5).toFixed(2),
-  competition: (Math.random()).toFixed(2),
-});
-
-export const analyzeKeyword = async (
-  keyword: string
-): Promise<KeywordMetrics> => {
-  return generateMockMetrics(keyword);
-};
-
-export const generateKeywordsFromNiche = async (
-  niche: string, 
-  apiKey: string, 
+export async function generateKeywordsFromNiche(
+  niche: string,
+  apiKey: string,
   model: ModelType
-): Promise<string[]> => {
-  try {
-    let keywords: string[] = [];
-    switch (model) {
-      case 'chatgpt':
-        keywords = await generateKeywordsWithOpenAI(apiKey, niche);
-        break;
-      case 'anthropic':
-        keywords = await generateKeywordsWithAnthropic(apiKey, niche);
-        break;
-      case 'gemini':
-        keywords = await generateKeywordsWithGemini(apiKey, niche);
-        break;
-      default:
-        throw new Error('Invalid model selected');
-    }
-    
-    return keywords || [];
-  } catch (error) {
-    console.error('Error generating keywords:', error);
-    return [];
+): Promise<string[]> {
+  const prompt = `Generate a list of relevant keywords for the following niche or topic. 
+  Focus on different search intents, variations, and related terms.
+  Topic: ${niche}
+  
+  Provide the response as a JSON array of strings.`;
+
+  switch (model) {
+    case 'chatgpt':
+      return generateWithOpenAI(prompt, apiKey);
+    case 'gemini':
+      return generateWithGemini(prompt, apiKey);
+    case 'anthropic':
+      return generateWithAnthropic(prompt, apiKey);
+    default:
+      throw new Error('Unsupported model');
   }
-};
+}
 
-export const clusterKeywords = async (
-  keywords: string[],
-  minGroupSize: number,
-  maxGroupSize: number,
-  _similarityThreshold: number
-): Promise<KeywordCluster[]> => {
-  const clusters: KeywordCluster[] = [];
-  let currentCluster: string[] = [];
+async function generateWithOpenAI(prompt: string, apiKey: string): Promise<string[]> {
+  const openai = new OpenAI({ apiKey });
+  
+  const response = await openai.chat.completions.create({
+    model: "gpt-4",
+    messages: [
+      {
+        role: "system",
+        content: "You are a keyword research expert. Generate relevant keywords for the given topic."
+      },
+      {
+        role: "user",
+        content: prompt
+      }
+    ],
+    response_format: { type: "json_object" }
+  });
 
-  for (const keyword of keywords) {
-    if (currentCluster.length >= maxGroupSize) {
-      const metrics = await analyzeKeyword(currentCluster[0]);
-      clusters.push({
-        name: `Cluster ${clusters.length + 1}`,
-        keywords: [...currentCluster],
-        metrics
-      });
-      currentCluster = [];
-    }
-    currentCluster.push(keyword);
-  }
+  return JSON.parse(response.choices[0].message.content || '[]').keywords;
+}
 
-  if (currentCluster.length >= minGroupSize) {
-    const metrics = await analyzeKeyword(currentCluster[0]);
-    clusters.push({
-      name: `Cluster ${clusters.length + 1}`,
-      keywords: currentCluster,
-      metrics
-    });
-  }
+async function generateWithGemini(prompt: string, apiKey: string): Promise<string[]> {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-  return clusters;
-};
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: prompt }]}],
+  });
+
+  return JSON.parse(result.response.text()).keywords;
+}
+
+async function generateWithAnthropic(prompt: string, apiKey: string): Promise<string[]> {
+  const anthropic = new Anthropic({ apiKey });
+
+  const response = await anthropic.messages.create({
+    model: "claude-3-opus-20240229",
+    max_tokens: 1000,
+    system: "You are a keyword research expert. Generate relevant keywords for the given topic.",
+    messages: [
+      {
+        role: "user",
+        content: prompt
+      }
+    ]
+  });
+
+  const content = response.content[0].type === 'text' ? response.content[0].text : '';
+  return JSON.parse(content).keywords;
+}
