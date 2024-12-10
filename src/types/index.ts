@@ -56,3 +56,16 @@ export interface SearchMetrics {
   cpc: string;
   trend: number[];
 }
+
+export interface KeywordCategory {
+  name: string;
+  keywords: KeywordMetric[];
+}
+
+export interface KeywordMetric {
+  keyword: string;
+  volume: number;
+  competition: 'Low' | 'Medium' | 'High';
+  difficulty: number;
+  opportunity: number;
+}
