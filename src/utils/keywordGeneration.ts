@@ -2,38 +2,18 @@ import { KeywordCluster, KeywordMetrics } from '../types';
 import { generateKeywordsWithOpenAI, generateKeywordsWithAnthropic, generateKeywordsWithGemini } from './api';
 import { ModelType } from '../context/ApiKeyContext';
 
+const generateMockMetrics = (keyword: string): KeywordMetrics => ({
+  keyword,
+  searchVolume: Math.floor(Math.random() * 10000),
+  difficulty: Math.floor(Math.random() * 100),
+  cpc: (Math.random() * 5).toFixed(2),
+  competition: (Math.random()).toFixed(2),
+});
+
 export const analyzeKeyword = async (
-  keyword: string, 
-  apiKey: string,
-  model: ModelType
+  keyword: string
 ): Promise<KeywordMetrics> => {
-  try {
-    let response;
-    switch (model) {
-      case 'chatgpt':
-        response = await generateKeywordsWithOpenAI(apiKey, keyword);
-        break;
-      case 'anthropic':
-        response = await generateKeywordsWithAnthropic(apiKey, keyword);
-        break;
-      case 'gemini':
-        response = await generateKeywordsWithGemini(apiKey, keyword);
-        break;
-      default:
-        throw new Error('Invalid model selected');
-    }
-    
-    return {
-      keyword,
-      searchVolume: response.metrics.searchVolume,
-      difficulty: response.metrics.difficulty,
-      cpc: response.metrics.cpc.toString(),
-      competition: response.metrics.competition.toString(),
-    };
-  } catch (error) {
-    console.error('Error analyzing keyword:', error);
-    throw error;
-  }
+  return generateMockMetrics(keyword);
 };
 
 export const generateKeywordsFromNiche = async (
@@ -42,25 +22,25 @@ export const generateKeywordsFromNiche = async (
   model: ModelType
 ): Promise<string[]> => {
   try {
-    let response;
+    let keywords: string[] = [];
     switch (model) {
       case 'chatgpt':
-        response = await generateKeywordsWithOpenAI(apiKey, niche);
+        keywords = await generateKeywordsWithOpenAI(apiKey, niche);
         break;
       case 'anthropic':
-        response = await generateKeywordsWithAnthropic(apiKey, niche);
+        keywords = await generateKeywordsWithAnthropic(apiKey, niche);
         break;
       case 'gemini':
-        response = await generateKeywordsWithGemini(apiKey, niche);
+        keywords = await generateKeywordsWithGemini(apiKey, niche);
         break;
       default:
         throw new Error('Invalid model selected');
     }
     
-    return response.keywords;
+    return keywords || [];
   } catch (error) {
     console.error('Error generating keywords:', error);
-    throw error;
+    return [];
   }
 };
 
@@ -68,16 +48,14 @@ export const clusterKeywords = async (
   keywords: string[],
   minGroupSize: number,
   maxGroupSize: number,
-  _similarityThreshold: number,
-  apiKey: string,
-  model: ModelType
+  _similarityThreshold: number
 ): Promise<KeywordCluster[]> => {
   const clusters: KeywordCluster[] = [];
   let currentCluster: string[] = [];
 
   for (const keyword of keywords) {
     if (currentCluster.length >= maxGroupSize) {
-      const metrics = await analyzeKeyword(currentCluster[0], apiKey, model);
+      const metrics = await analyzeKeyword(currentCluster[0]);
       clusters.push({
         name: `Cluster ${clusters.length + 1}`,
         keywords: [...currentCluster],
@@ -89,7 +67,7 @@ export const clusterKeywords = async (
   }
 
   if (currentCluster.length >= minGroupSize) {
-    const metrics = await analyzeKeyword(currentCluster[0], apiKey, model);
+    const metrics = await analyzeKeyword(currentCluster[0]);
     clusters.push({
       name: `Cluster ${clusters.length + 1}`,
       keywords: currentCluster,
