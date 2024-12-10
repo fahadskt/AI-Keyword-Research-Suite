@@ -1,16 +1,18 @@
 import React from 'react';
 
-interface ClusteringSettingsProps {
+interface Settings {
   minGroupSize: number;
   maxGroupSize: number;
   similarityThreshold: number;
+}
+
+interface ClusteringSettingsProps {
+  settings: Settings;
   onSettingChange: (setting: string, value: number) => void;
 }
 
 const ClusteringSettings: React.FC<ClusteringSettingsProps> = ({
-  minGroupSize,
-  maxGroupSize,
-  similarityThreshold,
+  settings,
   onSettingChange,
 }) => {
   return (
@@ -27,8 +29,10 @@ const ClusteringSettings: React.FC<ClusteringSettingsProps> = ({
           <label className="block text-sm mb-1">Minimum Group Size</label>
           <input
             type="number"
-            value={minGroupSize}
+            value={settings.minGroupSize}
             onChange={(e) => onSettingChange('minGroupSize', parseInt(e.target.value))}
+            min={1}
+            max={settings.maxGroupSize}
             className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600"
           />
         </div>
@@ -36,22 +40,28 @@ const ClusteringSettings: React.FC<ClusteringSettingsProps> = ({
           <label className="block text-sm mb-1">Maximum Group Size</label>
           <input
             type="number"
-            value={maxGroupSize}
+            value={settings.maxGroupSize}
             onChange={(e) => onSettingChange('maxGroupSize', parseInt(e.target.value))}
+            min={settings.minGroupSize}
             className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-600"
           />
         </div>
         <div>
-          <label className="block text-sm mb-1">Similarity Threshold</label>
+          <label className="block text-sm mb-1">
+            Similarity Threshold: {settings.similarityThreshold}%
+          </label>
           <input
             type="range"
             min="0"
             max="100"
-            value={similarityThreshold}
+            value={settings.similarityThreshold}
             onChange={(e) => onSettingChange('similarityThreshold', parseInt(e.target.value))}
             className="w-full"
           />
-          <p className="text-xs text-gray-500 mt-1">{similarityThreshold}% similarity required</p>
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Less Similar</span>
+            <span>More Similar</span>
+          </div>
         </div>
       </div>
     </div>

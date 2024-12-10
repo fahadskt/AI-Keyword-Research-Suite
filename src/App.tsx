@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import ModelSelector from './components/ModelSelector';
-import ApiKeyInput from './components/ApiKeyInput';
 import KeywordInput from './components/KeywordInput';
 import ClusteringSettings from './components/ClusteringSettings';
 import ResultsPanel from './components/ResultsPanel';
 import QuestionFinder from './components/QuestionFinder';
+import ApiKeySettings from './components/ApiKeySettings';
+import { ApiKeyProvider, useApiKeys } from './context/ApiKeyContext';
 import { generateKeywordsFromNiche, clusterKeywords } from './utils/keywordGeneration';
 import { KeywordCluster } from './types';
 
-function App() {
+function AppContent() {
+  const { apiKeys, hasValidKeys, updateApiKeys } = useApiKeys();
   const [selectedModel, setSelectedModel] = useState('chatgpt');
-  const [apiKey, setApiKey] = useState('');
   const [keywords, setKeywords] = useState('');
   const [generatedKeywords, setGeneratedKeywords] = useState<string[]>([]);
   const [keywordClusters, setKeywordClusters] = useState<KeywordCluster[]>([]);
@@ -31,14 +32,20 @@ function App() {
   };
 
   const handleGenerateKeywords = async () => {
-    if (!keywords.trim() || !apiKey.trim()) {
-      alert('Please enter keywords and API key');
+    if (!keywords.trim() || !hasValidKeys) {
+      alert('Please enter keywords and set up your API keys');
+      return;
+    }
+
+    const currentApiKey = apiKeys[selectedModel as keyof typeof apiKeys];
+    if (!currentApiKey) {
+      alert(`Please set up your ${selectedModel} API key first`);
       return;
     }
 
     setIsLoading(true);
     try {
-      const generated = await generateKeywordsFromNiche(keywords, apiKey, selectedModel);
+      const generated = await generateKeywordsFromNiche(keywords, currentApiKey, selectedModel);
       setGeneratedKeywords(generated);
       
       const clusters = clusterKeywords(
@@ -50,7 +57,7 @@ function App() {
       setKeywordClusters(clusters);
     } catch (error) {
       console.error('Error generating keywords:', error);
-      alert('Failed to generate keywords. Please try again.');
+      alert('Error generating keywords. Please check your API key and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -59,44 +66,47 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <Hero />
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg p-6">
+      <main className="container mx-auto px-4 py-8">
+        <Hero />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div>
+            <ApiKeySettings onKeysUpdate={updateApiKeys} initialKeys={apiKeys} />
+            <div className="mt-6">
               <ModelSelector
                 selectedModel={selectedModel}
                 onModelSelect={setSelectedModel}
               />
-              <ApiKeyInput
-                apiKey={apiKey}
-                onApiKeyChange={setApiKey}
-                selectedModel={selectedModel}
-              />
-              <KeywordInput
-                keywords={keywords}
-                onKeywordsChange={setKeywords}
-                onGenerate={handleGenerateKeywords}
-              />
-              <ClusteringSettings
-                minGroupSize={clusteringSettings.minGroupSize}
-                maxGroupSize={clusteringSettings.maxGroupSize}
-                similarityThreshold={clusteringSettings.similarityThreshold}
-                onSettingChange={handleSettingChange}
-              />
             </div>
           </div>
-          <div className="space-y-6">
-            <ResultsPanel 
-              keywords={generatedKeywords}
-              clusters={keywordClusters}
+          <div>
+            <KeywordInput
+              value={keywords}
+              onChange={setKeywords}
+              onSubmit={handleGenerateKeywords}
               isLoading={isLoading}
             />
-            <QuestionFinder />
+            <ClusteringSettings
+              settings={clusteringSettings}
+              onSettingChange={handleSettingChange}
+            />
           </div>
         </div>
-      </div>
+        <ResultsPanel
+          keywords={generatedKeywords}
+          clusters={keywordClusters}
+          isLoading={isLoading}
+        />
+        <QuestionFinder generatedKeywords={generatedKeywords} />
+      </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ApiKeyProvider>
+      <AppContent />
+    </ApiKeyProvider>
   );
 }
 
