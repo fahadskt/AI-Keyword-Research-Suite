@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { KeywordCluster, KeywordAnalysis, KeywordOverview } from '../types';
 import KeywordOverviewPanel from './KeywordOverviewPanel';
 import KeywordAnalysisPanel from './KeywordAnalysisPanel';
+import KeywordMetrics from './KeywordMetrics';
 
 interface ResultsPanelProps {
   keywords: string[];
@@ -9,6 +10,7 @@ interface ResultsPanelProps {
   isLoading: boolean;
   overview?: KeywordOverview;
   selectedKeyword?: KeywordAnalysis;
+  onKeywordSelect: (keyword: string) => void;
 }
 
 type TabType = 'overview' | 'analysis' | 'clusters';
@@ -18,7 +20,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
   clusters,
   isLoading,
   overview,
-  selectedKeyword
+  selectedKeyword,
+  onKeywordSelect
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
@@ -75,7 +78,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
       {/* Content */}
       <div className="p-6">
         {activeTab === 'overview' && overview && (
-          <KeywordOverviewPanel overview={overview} />
+          <KeywordOverviewPanel overview={overview} onKeywordSelect={onKeywordSelect} />
         )}
         {activeTab === 'analysis' && selectedKeyword && (
           <KeywordAnalysisPanel analysis={selectedKeyword} />
@@ -91,33 +94,17 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
                   </span>
                 </div>
                 {cluster.metrics && (
-                  <div className="grid grid-cols-4 gap-4 mb-4 text-sm">
-                    <div>
-                      <div className="text-gray-600">Search Volume</div>
-                      <div className="font-medium">{cluster.metrics.searchVolume.toLocaleString()}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-600">Difficulty</div>
-                      <div className="font-medium">{cluster.metrics.difficulty}%</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-600">CPC</div>
-                      <div className="font-medium">${cluster.metrics.cpc}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-600">Competition</div>
-                      <div className="font-medium">{cluster.metrics.competition}</div>
-                    </div>
-                  </div>
+                  <KeywordMetrics metrics={cluster.metrics} />
                 )}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mt-4">
                   {cluster.keywords.map((keyword, keywordIndex) => (
-                    <span
+                    <button
                       key={keywordIndex}
-                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                      onClick={() => onKeywordSelect(keyword)}
+                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-violet-100 hover:text-violet-700 transition-colors"
                     >
                       {keyword}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>

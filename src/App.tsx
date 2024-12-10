@@ -8,8 +8,8 @@ import ResultsPanel from './components/ResultsPanel';
 import QuestionFinder from './components/QuestionFinder';
 import ApiKeySettings from './components/ApiKeySettings';
 import { ApiKeyProvider, useApiKeys } from './context/ApiKeyContext';
-import { generateKeywordsFromNiche, clusterKeywords } from './utils/keywordGeneration';
-import { KeywordCluster } from './types';
+import { generateKeywordsFromNiche, clusterKeywords, analyzeKeyword } from './utils/keywordGeneration';
+import { KeywordCluster, KeywordAnalysis, KeywordOverview } from './types';
 
 type ModelType = 'chatgpt' | 'anthropic' | 'gemini' | 'google';
 
@@ -19,6 +19,8 @@ function AppContent() {
   const [keywords, setKeywords] = useState('');
   const [generatedKeywords, setGeneratedKeywords] = useState<string[]>([]);
   const [keywordClusters, setKeywordClusters] = useState<KeywordCluster[]>([]);
+  const [selectedKeyword, setSelectedKeyword] = useState<KeywordAnalysis | undefined>();
+  const [overview, setOverview] = useState<KeywordOverview | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [clusteringSettings, setClusteringSettings] = useState({
     minGroupSize: 3,
@@ -68,6 +70,7 @@ function AppContent() {
       const generated = await generateKeywordsFromNiche(keywords, currentApiKey, selectedModel);
       setGeneratedKeywords(generated);
       
+      // Generate clusters
       const clusters = clusterKeywords(
         generated,
         clusteringSettings.minGroupSize,
@@ -75,12 +78,64 @@ function AppContent() {
         clusteringSettings.similarityThreshold
       );
       setKeywordClusters(clusters);
+
+      // Generate overview
+      const totalKeywords = generated.length;
+      const allMetrics = generated.map(kw => analyzeKeyword(kw));
+      const avgDifficulty = Math.floor(allMetrics.reduce((acc, m) => acc + m.difficulty, 0) / totalKeywords);
+      
+      setOverview({
+        totalKeywords,
+        avgDifficulty,
+        categories: clusters.map(c => c.name),
+        volumeDistribution: {
+          high: allMetrics.filter(m => m.searchVolume > 5000).length,
+          medium: allMetrics.filter(m => m.searchVolume > 1000 && m.searchVolume <= 5000).length,
+          low: allMetrics.filter(m => m.searchVolume <= 1000).length,
+        }
+      });
+
+      // Set first keyword as selected
+      if (generated.length > 0) {
+        const firstKeywordMetrics = analyzeKeyword(generated[0]);
+        setSelectedKeyword({
+          keyword: generated[0],
+          metrics: firstKeywordMetrics,
+          variations: generated.slice(1, 4).map(kw => ({
+            keyword: kw,
+            searchVolume: Math.floor(Math.random() * 10000),
+            difficulty: Math.floor(Math.random() * 100),
+            competition: Math.random().toFixed(2),
+            cpc: (Math.random() * 5).toFixed(2)
+          })),
+          relatedTopics: clusters[0]?.keywords.slice(0, 3) || []
+        });
+      }
     } catch (error) {
       console.error('Error generating keywords:', error);
       alert('Error generating keywords. Please check your API key and try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleKeywordSelect = (keyword: string) => {
+    const keywordMetrics = analyzeKeyword(keyword);
+    setSelectedKeyword({
+      keyword,
+      metrics: keywordMetrics,
+      variations: generatedKeywords
+        .filter(k => k !== keyword)
+        .slice(0, 4)
+        .map(kw => ({
+          keyword: kw,
+          searchVolume: Math.floor(Math.random() * 10000),
+          difficulty: Math.floor(Math.random() * 100),
+          competition: Math.random().toFixed(2),
+          cpc: (Math.random() * 5).toFixed(2)
+        })),
+      relatedTopics: keywordClusters.find(c => c.keywords.includes(keyword))?.keywords.filter(k => k !== keyword).slice(0, 3) || []
+    });
   };
 
   return (
@@ -115,6 +170,9 @@ function AppContent() {
           keywords={generatedKeywords}
           clusters={keywordClusters}
           isLoading={isLoading}
+          overview={overview}
+          selectedKeyword={selectedKeyword}
+          onKeywordSelect={handleKeywordSelect}
         />
         <QuestionFinder generatedKeywords={generatedKeywords} />
       </main>

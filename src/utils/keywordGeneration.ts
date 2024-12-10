@@ -1,5 +1,15 @@
-import { KeywordCluster } from '../types';
-import { calculateClusterMetrics } from './keywordAnalysis';
+import { KeywordCluster, KeywordMetrics, KeywordVariation } from '../types';
+
+export const analyzeKeyword = (keyword: string): KeywordMetrics => {
+  // Mock analysis - in a real app, this would call SEO APIs
+  return {
+    keyword,
+    searchVolume: Math.floor(Math.random() * 10000),
+    difficulty: Math.floor(Math.random() * 100),
+    cpc: (Math.random() * 5).toFixed(2),
+    competition: Math.random().toFixed(2),
+  };
+};
 
 export const generateKeywordsFromNiche = async (niche: string, apiKey: string, model: string): Promise<string[]> => {
   // This would normally call the AI API
@@ -31,7 +41,13 @@ export const clusterKeywords = (
       clusters.push({
         name: `Cluster ${clusters.length + 1}`,
         keywords: [...currentCluster],
-        metrics: calculateClusterMetrics(currentCluster),
+        metrics: {
+          keyword: currentCluster[0],
+          searchVolume: Math.floor(Math.random() * 10000),
+          difficulty: Math.floor(Math.random() * 100),
+          cpc: (Math.random() * 5).toFixed(2),
+          competition: Math.random().toFixed(2),
+        }
       });
       currentCluster = [];
     }
@@ -42,7 +58,13 @@ export const clusterKeywords = (
     clusters.push({
       name: `Cluster ${clusters.length + 1}`,
       keywords: currentCluster,
-      metrics: calculateClusterMetrics(currentCluster),
+      metrics: {
+        keyword: currentCluster[0],
+        searchVolume: Math.floor(Math.random() * 10000),
+        difficulty: Math.floor(Math.random() * 100),
+        cpc: (Math.random() * 5).toFixed(2),
+        competition: Math.random().toFixed(2),
+      }
     });
   }
 

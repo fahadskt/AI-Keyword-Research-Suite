@@ -3,9 +3,10 @@ import { KeywordOverview } from '../types';
 
 interface KeywordOverviewPanelProps {
   overview: KeywordOverview;
+  onKeywordSelect?: (keyword: string) => void;
 }
 
-const KeywordOverviewPanel: React.FC<KeywordOverviewPanelProps> = ({ overview }) => {
+const KeywordOverviewPanel: React.FC<KeywordOverviewPanelProps> = ({ overview, onKeywordSelect }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
       <div className="grid grid-cols-3 gap-4 mb-6">
