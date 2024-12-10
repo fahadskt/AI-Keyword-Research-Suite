@@ -3,18 +3,31 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import Anthropic from '@anthropic-ai/sdk';
 import { ModelType } from '../context/ApiKeyContext';
 
+const KEYWORD_PROMPT = `Analyze this topic and generate a comprehensive list of keywords in these categories:
+
+1. Main Keywords (5-10)
+2. Low Competition Keywords (5-10)
+3. Long Tail Keywords (10-15)
+4. Related Keywords (5-10)
+
+For each keyword, provide:
+- Search volume
+- Competition level
+- Difficulty score
+- Search intent
+- CPC
+- SERP features
+- Trend data
+- Seasonality
+
+Return the data as a JSON array with categories. Topic: `;
+
 export async function generateKeywordsFromNiche(
   niche: string,
   apiKey: string,
   model: ModelType
 ): Promise<string[]> {
-  const prompt = `Generate a list of relevant keywords for the following niche or topic.
-  Return ONLY a JSON object in this exact format:
-  {
-    "keywords": string[]
-  }
-  
-  Topic: ${niche}`;
+  const prompt = `${KEYWORD_PROMPT}${niche}`;
 
   switch (model) {
     case 'chatgpt':
@@ -31,24 +44,26 @@ export async function generateKeywordsFromNiche(
 async function generateWithOpenAI(prompt: string, apiKey: string): Promise<string[]> {
   const openai = new OpenAI({ apiKey });
   
-  const response = await openai.chat.completions.create({
-    model: "gpt-4",
-    messages: [
-      {
-        role: "system",
-        content: "You are a keyword research expert. Generate relevant keywords for the given topic. Respond with a JSON object containing a 'keywords' array."
-      },
-      {
-        role: "user",
-        content: prompt
-      }
-    ],
-    response_format: { type: "json_object" }
-  });
-
   try {
-    const parsed = JSON.parse(response.choices[0].message.content || '{"keywords": []}');
-    return parsed.keywords || [];
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert SEO and keyword research specialist. Generate comprehensive keyword lists with detailed metrics."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+      max_tokens: 4000,
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{"keywords": []}');
+    return extractKeywords(result);
   } catch (error) {
     console.error('Failed to parse OpenAI response:', error);
     return [];
@@ -133,4 +148,24 @@ async function generateWithAnthropic(prompt: string, apiKey: string): Promise<st
     console.error('Failed to parse Anthropic response:', error);
     return [];
   }
+}
+
+function extractKeywords(result: any): string[] {
+  const allKeywords: string[] = [];
+  
+  // Extract keywords from each category
+  if (result.mainKeywords) {
+    allKeywords.push(...result.mainKeywords.map((k: any) => k.keyword));
+  }
+  if (result.lowCompetitionKeywords) {
+    allKeywords.push(...result.lowCompetitionKeywords.map((k: any) => k.keyword));
+  }
+  if (result.longTailKeywords) {
+    allKeywords.push(...result.longTailKeywords.map((k: any) => k.keyword));
+  }
+  if (result.relatedKeywords) {
+    allKeywords.push(...result.relatedKeywords.map((k: any) => k.keyword));
+  }
+
+  return allKeywords;
 }
