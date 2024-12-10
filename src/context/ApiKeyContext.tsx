@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+export type ModelType = 'chatgpt' | 'anthropic' | 'gemini' | 'google';
+
 interface ApiKeys {
-  openai?: string;
-  anthropic?: string;
-  google?: string;
-  gemini?: string;
+  openai: string | undefined;      // for chatgpt
+  anthropic: string | undefined;
+  gemini: string | undefined;
+  google: string | undefined;
+  chatgpt: string | undefined;     // maps to openai
 }
 
 interface ApiKeyContextType {
@@ -16,7 +19,13 @@ interface ApiKeyContextType {
 const ApiKeyContext = createContext<ApiKeyContextType | undefined>(undefined);
 
 export const ApiKeyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [apiKeys, setApiKeys] = useState<ApiKeys>({});
+  const [apiKeys, setApiKeys] = useState<ApiKeys>({
+    openai: undefined,
+    anthropic: undefined,
+    gemini: undefined,
+    google: undefined,
+    chatgpt: undefined
+  });
   const [hasValidKeys, setHasValidKeys] = useState(false);
 
   useEffect(() => {

@@ -6,10 +6,11 @@ import KeywordInput from './components/KeywordInput';
 import ClusteringSettings from './components/ClusteringSettings';
 import ResultsPanel from './components/ResultsPanel';
 import QuestionFinder from './components/QuestionFinder';
-import ApiKeySettings from './components/ApiKeySettings';
 import { ApiKeyProvider, useApiKeys } from './context/ApiKeyContext';
 import { generateKeywordsFromNiche } from './utils/keywordGeneration';
-import { KeywordCategory } from './types';
+import { KeywordCategory, KeywordMetric } from './types';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Settings from './components/Settings';
 
 type ModelType = 'chatgpt' | 'anthropic' | 'gemini' | 'google';
 
@@ -194,7 +195,6 @@ function AppContent() {
         <Hero />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div>
-            <ApiKeySettings />
             <div className="mt-6">
               <ModelSelector
                 selectedModel={selectedModel}
@@ -229,7 +229,12 @@ function AppContent() {
 function App() {
   return (
     <ApiKeyProvider>
-      <AppContent />
+      <Router>
+        <Routes>
+          <Route path="/" element={<AppContent />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </Router>
     </ApiKeyProvider>
   );
 }

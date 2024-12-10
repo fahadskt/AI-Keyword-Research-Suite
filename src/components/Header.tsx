@@ -1,8 +1,9 @@
-import React from 'react';
+import { Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   return (
-    <header className="flex justify-between items-center p-4 bg-white">
+    <header className="flex justify-between items-center p-4 bg-white border-b border-gray-200">
       <div className="flex items-center space-x-2">
         <div className="text-violet-600">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -12,9 +13,18 @@ const Header = () => {
         </div>
         <span className="font-semibold">AI Keyword Research</span>
       </div>
-      <button className="bg-violet-600 text-white px-4 py-2 rounded-md text-sm hover:bg-violet-700 transition-colors">
-        Book Free SEO Strategy Session
-      </button>
+      <div className="flex items-center space-x-4">
+        <Link
+          to="/settings"
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          title="Settings"
+        >
+          <Settings className="w-5 h-5" />
+        </Link>
+        <button className="bg-violet-600 text-white px-4 py-2 rounded-md text-sm hover:bg-violet-700 transition-colors">
+          Book Free SEO Strategy Session
+        </button>
+      </div>
     </header>
   );
 };
