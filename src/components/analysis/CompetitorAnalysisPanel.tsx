@@ -4,9 +4,24 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 
 interface Props {
   analysis: CompetitorAnalysis;
+  isLoading?: boolean;
 }
 
-export const CompetitorAnalysisPanel: React.FC<Props> = ({ analysis }) => {
+export const CompetitorAnalysisPanel: React.FC<Props> = ({ analysis, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-xl font-semibold mb-4">Competitor Analysis</h2>

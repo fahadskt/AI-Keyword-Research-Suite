@@ -84,10 +84,18 @@ function AppContent() {
         currentApiKey,
         selectedModel
       );
+
+      // Validate analysis data
+      if (!analysisData.competitorAnalysis || 
+          !analysisData.contentStrategy || 
+          !analysisData.marketTrends) {
+        throw new Error('Incomplete analysis data received');
+      }
+
       setAnalysis(analysisData);
     } catch (error) {
       console.error('Error:', error);
-      alert('Error generating analysis. Please try again.');
+      alert('Error generating analysis. Some data may be incomplete. Please try again.');
     } finally {
       setIsLoading(false);
     }

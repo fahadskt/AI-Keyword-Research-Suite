@@ -5,6 +5,108 @@ import { ModelType } from '../context/ApiKeyContext';
 import { KeywordCategory } from '../types';
 import { CompetitorAnalysis, ContentStrategy, MarketTrends } from '../types/analysis';
 
+// Create a function to generate the analysis prompt
+function createAnalysisPrompt(categories: KeywordCategory[]): string {
+  return `Analyze these keywords and provide a comprehensive SEO and content strategy analysis.
+  Return a detailed JSON response with the following structure:
+
+  {
+    "competitorAnalysis": {
+      "topCompetitors": [
+        {
+          "domain": "example.com",
+          "strengths": ["Strong brand authority", "High-quality content"],
+          "weaknesses": ["Poor mobile optimization", "Slow load times"],
+          "contentGaps": ["Missing beginner tutorials", "No video content"],
+          "rankingKeywords": ["main keyword", "secondary keyword"],
+          "marketShare": 25
+        }
+      ],
+      "competitiveLandscape": {
+        "difficultyLevel": "Medium",
+        "entryBarriers": ["High content quality requirements", "Strong existing brands"],
+        "opportunities": ["Underserved mobile market", "Video content gap"],
+        "threats": ["Increasing ad costs", "New competitors"]
+      }
+    },
+    "contentStrategy": {
+      "recommendedTopics": [
+        {
+          "topic": "Beginner's Guide to SEO",
+          "type": "Long-form Guide",
+          "estimatedImpact": 85,
+          "targetKeywords": ["seo basics", "seo for beginners"],
+          "outline": [
+            "What is SEO?",
+            "Key ranking factors",
+            "On-page optimization"
+          ],
+          "recommendedAngle": "Focus on practical examples and case studies"
+        }
+      ],
+      "contentCalendar": [
+        {
+          "month": "January 2024",
+          "focus": "SEO Fundamentals",
+          "topics": ["Keyword Research", "On-page SEO"],
+          "goals": ["Increase organic traffic by 20%", "Generate 50 backlinks"]
+        }
+      ],
+      "contentTypes": [
+        {
+          "type": "How-to Guides",
+          "effectiveness": 85,
+          "recommendedFrequency": "2 per week",
+          "bestPractices": [
+            "Include step-by-step instructions",
+            "Add visual aids"
+          ]
+        }
+      ]
+    },
+    "marketTrends": {
+      "emergingTopics": [
+        {
+          "topic": "AI in SEO",
+          "growthRate": 150,
+          "predictedPeak": "Q4 2024",
+          "relevance": 90
+        }
+      ],
+      "seasonalOpportunities": [
+        {
+          "season": "Holiday Season",
+          "keywords": ["christmas seo", "holiday marketing"],
+          "peakMonths": ["November", "December"],
+          "recommendedPreparation": "Start content creation 3 months ahead"
+        }
+      ],
+      "industryShifts": [
+        {
+          "trend": "Mobile-first Indexing",
+          "impact": 85,
+          "actionItems": [
+            "Optimize for mobile devices",
+            "Improve page speed"
+          ],
+          "timeframe": "Next 6 months"
+        }
+      ]
+    }
+  }
+
+  Analyze the following keywords and categories to provide actionable insights:
+  ${JSON.stringify(categories, null, 2)}
+
+  Important:
+  1. Provide realistic metrics and data
+  2. Include specific, actionable recommendations
+  3. Base insights on current SEO trends and best practices
+  4. Consider search intent and user behavior
+  5. Include competitive analysis based on the niche
+  6. Provide detailed content strategy recommendations`;
+}
+
 export async function analyzeKeywordOpportunities(
   categories: KeywordCategory[],
   apiKey: string,
@@ -14,102 +116,21 @@ export async function analyzeKeywordOpportunities(
   contentStrategy: ContentStrategy;
   marketTrends: MarketTrends;
 }> {
-  const prompt = `Analyze these keywords and provide comprehensive insights:
-  ${JSON.stringify(categories, null, 2)}
-
-  Return a detailed analysis in this JSON format:
-  {
-    "competitorAnalysis": {
-      "topCompetitors": [
-        {
-          "domain": string,
-          "strengths": string[],
-          "weaknesses": string[],
-          "contentGaps": string[],
-          "rankingKeywords": string[],
-          "marketShare": number
-        }
-      ],
-      "competitiveLandscape": {
-        "difficultyLevel": "Low" | "Medium" | "High",
-        "entryBarriers": string[],
-        "opportunities": string[],
-        "threats": string[]
-      }
-    },
-    "contentStrategy": {
-      "recommendedTopics": [
-        {
-          "topic": string,
-          "type": string,
-          "estimatedImpact": number,
-          "targetKeywords": string[],
-          "outline": string[],
-          "recommendedAngle": string
-        }
-      ],
-      "contentCalendar": [
-        {
-          "month": string,
-          "focus": string,
-          "topics": string[],
-          "goals": string[]
-        }
-      ],
-      "contentTypes": [
-        {
-          "type": string,
-          "effectiveness": number,
-          "recommendedFrequency": string,
-          "bestPractices": string[]
-        }
-      ]
-    },
-    "marketTrends": {
-      "emergingTopics": [
-        {
-          "topic": string,
-          "growthRate": number,
-          "predictedPeak": string,
-          "relevance": number
-        }
-      ],
-      "seasonalOpportunities": [
-        {
-          "season": string,
-          "keywords": string[],
-          "peakMonths": string[],
-          "recommendedPreparation": string
-        }
-      ],
-      "industryShifts": [
-        {
-          "trend": string,
-          "impact": number,
-          "actionItems": string[],
-          "timeframe": string
-        }
-      ]
-    }
-  }`;
+  const analysisPrompt = createAnalysisPrompt(categories);
 
   switch (model) {
     case 'chatgpt':
-      return analyzeWithOpenAI(prompt, apiKey);
+      return analyzeWithOpenAI(analysisPrompt, apiKey);
     case 'gemini':
-      return analyzeWithGemini(prompt, apiKey);
+      return analyzeWithGemini(analysisPrompt, apiKey);
     case 'anthropic':
-      return analyzeWithAnthropic(prompt, apiKey);
+      return analyzeWithAnthropic(analysisPrompt, apiKey);
     default:
       throw new Error('Unsupported model');
   }
 }
 
-async function analyzeWithOpenAI(prompt: string, apiKey: string): Promise<{
-  competitorAnalysis: CompetitorAnalysis;
-  contentStrategy: ContentStrategy;
-  marketTrends: MarketTrends;
-}> {
+async function analyzeWithOpenAI(prompt: string, apiKey: string) {
   const openai = new OpenAI({ apiKey });
   
   try {
@@ -118,7 +139,7 @@ async function analyzeWithOpenAI(prompt: string, apiKey: string): Promise<{
       messages: [
         {
           role: "system",
-          content: "You are an expert SEO and market analysis AI. Provide detailed analysis in JSON format."
+          content: "You are an expert SEO analyst and content strategist. Provide detailed, actionable insights based on data analysis."
         },
         {
           role: "user",
@@ -131,10 +152,21 @@ async function analyzeWithOpenAI(prompt: string, apiKey: string): Promise<{
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
+    validateAnalysisResponse(result);
     return result;
   } catch (error) {
     console.error('OpenAI analysis error:', error);
     return getDefaultAnalysis();
+  }
+}
+
+function validateAnalysisResponse(response: any) {
+  const requiredSections = ['competitorAnalysis', 'contentStrategy', 'marketTrends'];
+  const missingFields = requiredSections.filter(field => !response[field]);
+  
+  if (missingFields.length > 0) {
+    console.error('Missing required fields in analysis:', missingFields);
+    throw new Error('Incomplete analysis response');
   }
 }
 
