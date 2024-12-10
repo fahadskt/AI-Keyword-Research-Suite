@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useApiKeys, ModelType } from '../context/ApiKeyContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Key, Sliders, Bell, Palette } from 'lucide-react';
+import Layout from './Layout';
+import Card from './ui/Card';
 
 interface ModelConfig {
   id: ModelType;
@@ -8,10 +12,17 @@ interface ModelConfig {
   icon: React.ReactNode;
 }
 
-const Settings: React.FC = () => {
+const Settings = () => {
   const { apiKeys, updateApiKeys } = useApiKeys();
-  const [activeTab, setActiveTab] = useState<'api-keys' | 'preferences'>('api-keys');
+  const [activeTab, setActiveTab] = useState<'api-keys' | 'preferences' | 'notifications' | 'appearance'>('api-keys');
   const [isVisible, setIsVisible] = useState(false);
+
+  const tabs = [
+    { id: 'api-keys', label: 'API Keys', icon: Key },
+    { id: 'preferences', label: 'Preferences', icon: Sliders },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'appearance', label: 'Appearance', icon: Palette }
+  ];
 
   const getApiKeyValue = (modelId: ModelType): string | undefined => {
     switch (modelId) {
@@ -94,92 +105,137 @@ const Settings: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
-      
-      {/* Tabs */}
-      <div className="flex space-x-4 mb-6 border-b border-gray-200">
-        <button
-          className={`pb-2 px-4 ${activeTab === 'api-keys' ? 'border-b-2 border-violet-600 text-violet-600' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('api-keys')}
-        >
-          API Keys
-        </button>
-        <button
-          className={`pb-2 px-4 ${activeTab === 'preferences' ? 'border-b-2 border-violet-600 text-violet-600' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('preferences')}
-        >
-          Preferences
-        </button>
-      </div>
-
-      {/* API Keys Section */}
-      {activeTab === 'api-keys' && (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">AI Model API Keys</h2>
-            <button
-              onClick={() => setIsVisible(!isVisible)}
-              className="text-violet-600 hover:text-violet-700"
-            >
-              {isVisible ? 'Hide Keys' : 'Show Keys'}
-            </button>
+    <Layout 
+      title="Settings" 
+      description="Manage your API keys and preferences"
+    >
+      <div className="max-w-6xl mx-auto">
+        <div className="flex space-x-6">
+          {/* Sidebar */}
+          <div className="w-64 shrink-0">
+            <div className="space-y-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                      activeTab === tab.id
+                        ? 'bg-violet-50 text-violet-600'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon size={20} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="grid gap-6">
-            {models.map((model) => (
-              <div key={model.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-start space-x-4">
-                  <div className="text-violet-600">
-                    {model.icon}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-2">
+          {/* Main Content */}
+          <div className="flex-1">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activeTab === 'api-keys' && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
                       <div>
-                        <h3 className="font-medium">{model.name}</h3>
-                        <p className="text-sm text-gray-600">{model.description}</p>
+                        <h2 className="text-xl font-semibold text-gray-900">API Keys</h2>
+                        <p className="text-sm text-gray-600">
+                          Configure your AI model API keys for enhanced functionality
+                        </p>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        getApiKeyValue(model.id) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {getApiKeyValue(model.id) ? 'Connected' : 'Not Connected'}
-                      </span>
+                      <button
+                        onClick={() => setIsVisible(!isVisible)}
+                        className="flex items-center space-x-2 px-4 py-2 text-sm text-violet-600 hover:text-violet-700 transition-colors"
+                      >
+                        <Shield size={16} />
+                        <span>{isVisible ? 'Hide Keys' : 'Show Keys'}</span>
+                      </button>
                     </div>
-                    <div className="mt-4">
-                      <input
-                        type={isVisible ? "text" : "password"}
-                        value={getApiKeyValue(model.id) || ''}
-                        onChange={(e) => handleKeyChange(model.id, e.target.value)}
-                        placeholder={`Enter ${model.name} API key`}
-                        className="w-full p-2 border rounded-md focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-                      />
+
+                    <div className="grid gap-6">
+                      {models.map((model) => (
+                        <Card key={model.id}>
+                          <div className="p-6">
+                            <div className="flex items-start space-x-4">
+                              <div className="p-3 bg-violet-50 text-violet-600 rounded-lg">
+                                {model.icon}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <h3 className="font-medium text-gray-900">{model.name}</h3>
+                                    <p className="text-sm text-gray-600">{model.description}</p>
+                                  </div>
+                                  <motion.span
+                                    initial={false}
+                                    animate={{
+                                      backgroundColor: getApiKeyValue(model.id) 
+                                        ? 'rgb(220 252 231)' 
+                                        : 'rgb(243 244 246)',
+                                      color: getApiKeyValue(model.id)
+                                        ? 'rgb(22 163 74)'
+                                        : 'rgb(107 114 128)'
+                                    }}
+                                    className="px-2.5 py-1 text-xs rounded-full"
+                                  >
+                                    {getApiKeyValue(model.id) ? 'Connected' : 'Not Connected'}
+                                  </motion.span>
+                                </div>
+                                <div className="mt-4">
+                                  <div className="relative">
+                                    <input
+                                      type={isVisible ? "text" : "password"}
+                                      value={getApiKeyValue(model.id) || ''}
+                                      onChange={(e) => handleKeyChange(model.id, e.target.value)}
+                                      placeholder={`Enter ${model.name} API key`}
+                                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-shadow"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                      <Key size={16} className="text-gray-400" />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
                     </div>
+
+                    <Card className="p-4 bg-gradient-to-r from-violet-50 to-purple-50">
+                      <div className="flex items-start space-x-4">
+                        <div className="p-2 bg-white rounded-lg text-violet-600">
+                          <Shield size={24} />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900">Security Note</h3>
+                          <p className="text-sm text-gray-600">
+                            Your API keys are stored locally in your browser and are never sent to our servers.
+                            We recommend regularly rotating your API keys for security purposes.
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                )}
 
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Security Note</h3>
-            <p className="text-sm text-gray-600">
-              Your API keys are stored locally in your browser and are never sent to our servers.
-              We recommend regularly rotating your API keys for security purposes.
-            </p>
+                {/* Add other tab content here */}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
-      )}
-
-      {/* Preferences Section */}
-      {activeTab === 'preferences' && (
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">General Preferences</h2>
-            {/* Add preferences options here */}
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+    </Layout>
   );
 };
 

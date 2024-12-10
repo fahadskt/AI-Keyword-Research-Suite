@@ -1,18 +1,15 @@
 import { useState } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
-import ModelSelector from './components/ModelSelector';
 import KeywordInput from './components/KeywordInput';
 import ClusteringSettings from './components/ClusteringSettings';
 import ResultsPanel from './components/ResultsPanel';
 import QuestionFinder from './components/QuestionFinder';
-import { ApiKeyProvider, useApiKeys } from './context/ApiKeyContext';
+import { ApiKeyProvider, useApiKeys, ModelType } from './context/ApiKeyContext';
 import { generateKeywordsFromNiche } from './utils/keywordGeneration';
 import { KeywordCategory, KeywordMetric } from './types';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Settings from './components/Settings';
-
-type ModelType = 'chatgpt' | 'anthropic' | 'gemini' | 'google';
 
 function AppContent() {
   const { apiKeys, hasValidKeys } = useApiKeys();
@@ -195,19 +192,13 @@ function AppContent() {
         <Hero />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div>
-            <div className="mt-6">
-              <ModelSelector
-                selectedModel={selectedModel}
-                onModelSelect={(model: ModelType) => setSelectedModel(model)}
-              />
-            </div>
-          </div>
-          <div>
             <KeywordInput
               value={keywords}
               onChange={setKeywords}
               onSubmit={handleGenerateKeywords}
               isLoading={isLoading}
+              selectedModel={selectedModel}
+              onModelSelect={(model: ModelType) => setSelectedModel(model)}
             />
             <ClusteringSettings
               settings={clusteringSettings}

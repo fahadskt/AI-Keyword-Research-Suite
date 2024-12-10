@@ -1,29 +1,67 @@
-import { Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { Settings, Search, BarChart2, Book } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Header = () => {
+  const location = useLocation();
+  
+  const navItems = [
+    { path: '/', icon: Search, label: 'Research' },
+    { path: '/analytics', icon: BarChart2, label: 'Analytics' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/docs', icon: Book, label: 'Docs' }
+  ];
+
   return (
-    <header className="flex justify-between items-center p-4 bg-white border-b border-gray-200">
-      <div className="flex items-center space-x-2">
-        <div className="text-violet-600">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 19V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z" stroke="currentColor" strokeWidth="2"/>
-            <path d="M8 12H16M8 8H16M8 16H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <Link to="/" className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold">K</span>
+            </div>
+            <span className="text-lg font-semibold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+              KeywordAI
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex items-center space-x-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`px-4 py-2 rounded-md flex items-center space-x-2 transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-violet-50 text-violet-600' 
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span>{item.label}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-600"
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="flex items-center space-x-4">
+            <button className="hidden md:flex items-center px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition-colors">
+              <span>Upgrade Pro</span>
+              <span className="ml-2 text-xs bg-violet-500 px-2 py-0.5 rounded-full">
+                Save 20%
+              </span>
+            </button>
+          </div>
         </div>
-        <span className="font-semibold">AI Keyword Research</span>
-      </div>
-      <div className="flex items-center space-x-4">
-        <Link
-          to="/settings"
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          title="Settings"
-        >
-          <Settings className="w-5 h-5" />
-        </Link>
-        <button className="bg-violet-600 text-white px-4 py-2 rounded-md text-sm hover:bg-violet-700 transition-colors">
-          Book Free SEO Strategy Session
-        </button>
       </div>
     </header>
   );
