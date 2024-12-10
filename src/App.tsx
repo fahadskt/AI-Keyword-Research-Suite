@@ -10,6 +10,11 @@ import { KeywordCategory } from './types';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Settings from './components/Settings';
 import { generateKeywordInsights } from './services/aiService';
+import { analyzeKeywordOpportunities } from './services/analysisService';
+import { CompetitorAnalysis, ContentStrategy, MarketTrends } from './types/analysis';
+import { CompetitorAnalysisPanel } from './components/analysis/CompetitorAnalysisPanel';
+import { ContentStrategyPanel } from './components/analysis/ContentStrategyPanel';
+import { MarketTrendsPanel } from './components/analysis/MarketTrendsPanel';
 
 function AppContent() {
   const { apiKeys, hasValidKeys } = useApiKeys();
@@ -23,6 +28,11 @@ function AppContent() {
     maxGroupSize: 8,
     similarityThreshold: 30,
   });
+  const [analysis, setAnalysis] = useState<{
+    competitorAnalysis?: CompetitorAnalysis;
+    contentStrategy?: ContentStrategy;
+    marketTrends?: MarketTrends;
+  }>({});
 
   const getApiKeyForModel = (model: ModelType): string | undefined => {
     switch (model) {
@@ -56,21 +66,28 @@ function AppContent() {
 
     setIsLoading(true);
     try {
-      // Generate initial keywords
+      // Generate keywords
       const generated = await generateKeywordsFromNiche(keywords, currentApiKey, selectedModel);
       setGeneratedKeywords(generated);
 
-      // Get detailed insights for the keywords
+      // Get detailed insights
       const categoriesData = await generateKeywordInsights(
         keywords,
         currentApiKey,
         selectedModel
       );
-      
       setCategories(categoriesData);
+
+      // Get advanced analysis
+      const analysisData = await analyzeKeywordOpportunities(
+        categoriesData,
+        currentApiKey,
+        selectedModel
+      );
+      setAnalysis(analysisData);
     } catch (error) {
-      console.error('Error generating keywords:', error);
-      alert('Error generating keywords. Please check your API key and try again.');
+      console.error('Error:', error);
+      alert('Error generating analysis. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -100,11 +117,22 @@ function AppContent() {
             onSettingChange={handleSettingChange}
           />
         </div>
-        <ResultsPanel
-          keywords={generatedKeywords}
-          isLoading={isLoading}
-          categories={categories}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <ResultsPanel
+            keywords={generatedKeywords}
+            isLoading={isLoading}
+            categories={categories}
+          />
+          {analysis.competitorAnalysis && (
+            <CompetitorAnalysisPanel analysis={analysis.competitorAnalysis} />
+          )}
+          {analysis.contentStrategy && (
+            <ContentStrategyPanel strategy={analysis.contentStrategy} />
+          )}
+          {analysis.marketTrends && (
+            <MarketTrendsPanel trends={analysis.marketTrends} />
+          )}
+        </div>
         <QuestionFinder generatedKeywords={generatedKeywords} />
       </main>
     </div>
