@@ -1,90 +1,129 @@
-import React from 'react';
-import { KeywordCluster } from '../types';
-import KeywordMetrics from './KeywordMetrics';
-import { analyzeKeyword } from '../utils/keywordAnalysis';
+import React, { useState } from 'react';
+import { KeywordCluster, KeywordAnalysis, KeywordOverview } from '../types';
+import KeywordOverviewPanel from './KeywordOverviewPanel';
+import KeywordAnalysisPanel from './KeywordAnalysisPanel';
 
 interface ResultsPanelProps {
   keywords: string[];
   clusters: KeywordCluster[];
-  isLoading?: boolean;
+  isLoading: boolean;
+  overview?: KeywordOverview;
+  selectedKeyword?: KeywordAnalysis;
 }
 
-const ResultsPanel: React.FC<ResultsPanelProps> = ({ keywords, clusters, isLoading = false }) => {
+type TabType = 'overview' | 'analysis' | 'clusters';
+
+const ResultsPanel: React.FC<ResultsPanelProps> = ({
+  keywords,
+  clusters,
+  isLoading,
+  overview,
+  selectedKeyword
+}) => {
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg p-6 h-full">
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-violet-600 border-t-transparent"></div>
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600" />
       </div>
     );
   }
 
-  if (keywords.length === 0) {
-    return (
-      <div className="bg-white rounded-lg p-6 h-full">
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <svg className="w-16 h-16 text-violet-200" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2"/>
-                <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium mb-2">No Keywords Yet</h3>
-            <p className="text-gray-600 text-sm">
-              Enter your niche or keywords to get started with the analysis
-            </p>
-            <button className="mt-4 inline-flex items-center text-violet-600 hover:text-violet-700">
-              <svg className="w-4 h-4 mr-1" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8 4v8M4 8h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              Get Expert Help
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  if (!keywords.length) {
+    return null;
   }
 
   return (
-    <div className="bg-white rounded-lg p-6">
-      <div className="mb-6">
-        <h3 className="text-lg font-medium mb-4">Generated Keywords</h3>
-        <div className="flex flex-wrap gap-2">
-          {keywords.map((keyword, index) => (
-            <div key={index} className="group relative">
-              <span className="px-3 py-1 bg-violet-50 text-violet-700 rounded-full text-sm cursor-pointer">
-                {keyword}
-              </span>
-              <div className="absolute z-10 left-0 mt-2 w-64 hidden group-hover:block">
-                <KeywordMetrics metrics={analyzeKeyword(keyword)} />
-              </div>
-            </div>
-          ))}
+    <div className="bg-white rounded-lg shadow-sm">
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <div className="flex">
+          <button
+            className={`px-6 py-3 text-sm font-medium ${
+              activeTab === 'overview'
+                ? 'text-violet-600 border-b-2 border-violet-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button
+            className={`px-6 py-3 text-sm font-medium ${
+              activeTab === 'analysis'
+                ? 'text-violet-600 border-b-2 border-violet-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('analysis')}
+          >
+            Keyword Analysis
+          </button>
+          <button
+            className={`px-6 py-3 text-sm font-medium ${
+              activeTab === 'clusters'
+                ? 'text-violet-600 border-b-2 border-violet-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('clusters')}
+          >
+            Clusters
+          </button>
         </div>
       </div>
-      
-      <div>
-        <h3 className="text-lg font-medium mb-4">Keyword Clusters</h3>
-        <div className="space-y-4">
-          {clusters.map((cluster, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
-              <h4 className="font-medium mb-2">{cluster.name}</h4>
-              {cluster.metrics && <KeywordMetrics metrics={cluster.metrics} />}
-              <div className="flex flex-wrap gap-2 mt-4">
-                {cluster.keywords.map((keyword, keywordIndex) => (
-                  <span
-                    key={keywordIndex}
-                    className="px-3 py-1 bg-gray-50 text-gray-700 rounded-full text-sm"
-                  >
-                    {keyword}
+
+      {/* Content */}
+      <div className="p-6">
+        {activeTab === 'overview' && overview && (
+          <KeywordOverviewPanel overview={overview} />
+        )}
+        {activeTab === 'analysis' && selectedKeyword && (
+          <KeywordAnalysisPanel analysis={selectedKeyword} />
+        )}
+        {activeTab === 'clusters' && (
+          <div className="space-y-6">
+            {clusters.map((cluster, index) => (
+              <div key={index} className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-800">{cluster.name}</h3>
+                  <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-sm">
+                    {cluster.keywords.length} keywords
                   </span>
-                ))}
+                </div>
+                {cluster.metrics && (
+                  <div className="grid grid-cols-4 gap-4 mb-4 text-sm">
+                    <div>
+                      <div className="text-gray-600">Search Volume</div>
+                      <div className="font-medium">{cluster.metrics.searchVolume.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Difficulty</div>
+                      <div className="font-medium">{cluster.metrics.difficulty}%</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">CPC</div>
+                      <div className="font-medium">${cluster.metrics.cpc}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Competition</div>
+                      <div className="font-medium">{cluster.metrics.competition}</div>
+                    </div>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {cluster.keywords.map((keyword, keywordIndex) => (
+                    <span
+                      key={keywordIndex}
+                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                    >
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
