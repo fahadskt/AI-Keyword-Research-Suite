@@ -74,50 +74,131 @@ async function generateWithGemini(prompt: string, apiKey: string): Promise<strin
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-  const result = await model.generateContent({
-    contents: [{ 
-      role: "user", 
-      parts: [{ 
-        text: `You are a keyword research expert. Generate a list of relevant keywords.
-        IMPORTANT: Return ONLY a JSON object in this exact format, with no markdown formatting or additional text:
-        {
-          "keywords": ["keyword1", "keyword2", "keyword3"]
-        }
-        
-        Topic: ${prompt}`
-      }]
-    }],
-    generationConfig: {
-      temperature: 0.7,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 2048,
-    },
-  });
-
-  const text = result.response.text();
-  
-  // Clean the response text
-  const cleanedText = text.replace(/```(?:json|JSON)?\s*|\s*```/g, '').trim();
-  
   try {
-    // Try parsing the cleaned text directly
-    const parsed = JSON.parse(cleanedText);
-    return parsed.keywords || [];
-  } catch (parseError) {
-    console.error('Failed to parse cleaned response:', parseError);
-    try {
-      // Try finding any JSON-like structure in the text
-      const jsonMatch = text.match(/\{[\s\S]*?\}/);
-      if (!jsonMatch) {
-        throw new Error('No valid JSON found in response');
+    const result = await model.generateContent({
+      contents: [{ 
+        role: "user", 
+        parts: [{ 
+          text: `You are a keyword research expert. Generate a list of keywords with metrics.
+          
+          Return a JSON object in this EXACT format (no variations allowed):
+          {
+            "mainKeywords": [
+              {
+                "keyword": "main keyword 1",
+                "volume": 1000,
+                "competition": "Low",
+                "difficulty": 30,
+                "intent": "informational",
+                "cpc": 1.5,
+                "serpFeatures": ["featured_snippet"],
+                "trend": [100, 110, 120],
+                "seasonality": "stable"
+              }
+            ],
+            "lowCompetitionKeywords": [
+              {
+                "keyword": "low comp keyword 1",
+                "volume": 500,
+                "competition": "Low",
+                "difficulty": 20,
+                "intent": "informational",
+                "cpc": 0.8,
+                "serpFeatures": ["featured_snippet"],
+                "trend": [50, 60, 70],
+                "seasonality": "stable"
+              }
+            ],
+            "longTailKeywords": [
+              {
+                "keyword": "long tail keyword 1",
+                "volume": 200,
+                "competition": "Low",
+                "difficulty": 15,
+                "intent": "informational",
+                "cpc": 0.5,
+                "serpFeatures": ["featured_snippet"],
+                "trend": [20, 25, 30],
+                "seasonality": "stable"
+              }
+            ],
+            "relatedKeywords": [
+              {
+                "keyword": "related keyword 1",
+                "volume": 800,
+                "competition": "Medium",
+                "difficulty": 40,
+                "intent": "informational",
+                "cpc": 1.2,
+                "serpFeatures": ["featured_snippet"],
+                "trend": [80, 85, 90],
+                "seasonality": "stable"
+              }
+            ]
+          }
+
+          Topic: ${prompt}
+          
+          IMPORTANT:
+          1. Follow the exact format above
+          2. Use only double quotes
+          3. No trailing commas
+          4. No comments or additional text
+          5. All numbers must be plain numbers (not strings)
+          6. All arrays must be properly terminated
+          7. All property names must match exactly
+          8. Response must be valid JSON`
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.3,
+        topK: 20,
+        topP: 0.8,
+        maxOutputTokens: 4000,
+      },
+    });
+
+    const text = result.response.text();
+    
+    const cleanAndValidateJSON = (input: string): string => {
+      let cleaned = input.replace(/```(?:json|JSON)?\s*|\s*```/g, '');
+      
+      const jsonStart = cleaned.indexOf('{');
+      const jsonEnd = cleaned.lastIndexOf('}') + 1;
+      if (jsonStart === -1 || jsonEnd === 0) {
+        throw new Error('No JSON object found in response');
       }
-      const parsed = JSON.parse(jsonMatch[0]);
-      return parsed.keywords || [];
-    } catch (error) {
-      console.error('Failed to parse Gemini response:', error);
+      cleaned = cleaned.slice(jsonStart, jsonEnd);
+      
+      cleaned = cleaned
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/[\r\n\t]/g, '')
+        .replace(/,\s*([\]}])/g, '$1')
+        .replace(/([{,])\s*([a-zA-Z0-9_]+)\s*:/g, '$1"$2":')
+        .trim();
+      
+      return cleaned;
+    };
+
+    try {
+      const cleanedJSON = cleanAndValidateJSON(text);
+      const parsed = JSON.parse(cleanedJSON);
+      
+      const requiredCategories = ['mainKeywords', 'lowCompetitionKeywords', 'longTailKeywords', 'relatedKeywords'];
+      const missingCategories = requiredCategories.filter(cat => !Array.isArray(parsed[cat]));
+      
+      if (missingCategories.length > 0) {
+        throw new Error(`Missing or invalid categories: ${missingCategories.join(', ')}`);
+      }
+      
+      return extractKeywords(parsed);
+    } catch (parseError) {
+      console.error('Failed to parse Gemini response:', parseError);
       return [];
     }
+  } catch (error) {
+    console.error('Gemini API error:', error);
+    return [];
   }
 }
 
@@ -153,19 +234,27 @@ async function generateWithAnthropic(prompt: string, apiKey: string): Promise<st
 function extractKeywords(result: any): string[] {
   const allKeywords: string[] = [];
   
+  // Helper function to safely extract keywords from each category
+  const extractFromCategory = (category: any[]) => {
+    if (Array.isArray(category)) {
+      return category.map(k => k.keyword || '').filter(k => k);
+    }
+    return [];
+  };
+
   // Extract keywords from each category
   if (result.mainKeywords) {
-    allKeywords.push(...result.mainKeywords.map((k: any) => k.keyword));
+    allKeywords.push(...extractFromCategory(result.mainKeywords));
   }
   if (result.lowCompetitionKeywords) {
-    allKeywords.push(...result.lowCompetitionKeywords.map((k: any) => k.keyword));
+    allKeywords.push(...extractFromCategory(result.lowCompetitionKeywords));
   }
   if (result.longTailKeywords) {
-    allKeywords.push(...result.longTailKeywords.map((k: any) => k.keyword));
+    allKeywords.push(...extractFromCategory(result.longTailKeywords));
   }
   if (result.relatedKeywords) {
-    allKeywords.push(...result.relatedKeywords.map((k: any) => k.keyword));
+    allKeywords.push(...extractFromCategory(result.relatedKeywords));
   }
 
-  return allKeywords;
+  return [...new Set(allKeywords)].filter(Boolean);
 }
