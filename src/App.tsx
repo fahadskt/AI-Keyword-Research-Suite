@@ -2,7 +2,6 @@ import { useState } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import KeywordInput from './components/KeywordInput';
-import ClusteringSettings from './components/ClusteringSettings';
 import ResultsPanel from './components/ResultsPanel';
 import QuestionFinder from './components/QuestionFinder';
 import { ApiKeyProvider, useApiKeys, ModelType } from './context/ApiKeyContext';
@@ -23,13 +22,6 @@ function AppContent() {
     maxGroupSize: 8,
     similarityThreshold: 30,
   });
-
-  const handleSettingChange = (setting: string, value: number) => {
-    setClusteringSettings((prev) => ({
-      ...prev,
-      [setting]: value,
-    }));
-  };
 
   const getApiKeyForModel = (model: ModelType): string | undefined => {
     switch (model) {
@@ -185,26 +177,29 @@ function AppContent() {
     }
   };
 
+  const handleSettingChange = (setting: string, value: number) => {
+    setClusteringSettings((prev) => ({
+      ...prev,
+      [setting]: value,
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="container mx-auto px-4 py-8">
         <Hero />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div>
-            <KeywordInput
-              value={keywords}
-              onChange={setKeywords}
-              onSubmit={handleGenerateKeywords}
-              isLoading={isLoading}
-              selectedModel={selectedModel}
-              onModelSelect={(model: ModelType) => setSelectedModel(model)}
-            />
-            <ClusteringSettings
-              settings={clusteringSettings}
-              onSettingChange={handleSettingChange}
-            />
-          </div>
+        <div className="mb-8">
+          <KeywordInput
+            value={keywords}
+            onChange={setKeywords}
+            onSubmit={handleGenerateKeywords}
+            isLoading={isLoading}
+            selectedModel={selectedModel}
+            onModelSelect={(model: ModelType) => setSelectedModel(model)}
+            settings={clusteringSettings}
+            onSettingChange={handleSettingChange}
+          />
         </div>
         <ResultsPanel
           keywords={generatedKeywords}
