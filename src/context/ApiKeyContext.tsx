@@ -1,51 +1,80 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type ModelType = 'chatgpt' | 'anthropic' | 'gemini' | 'google';
+export type ModelType = 'chatgpt' | 'anthropic' | 'gemini';
 
 interface ApiKeys {
-  openai: string | undefined;      // for chatgpt
-  anthropic: string | undefined;
-  gemini: string | undefined;
-  google: string | undefined;
-  chatgpt: string | undefined;     // maps to openai
+  openai: string;
+  anthropic: string;
+  gemini: string;
 }
 
-interface ApiKeyContextType {
+export interface ApiKeyContextType {
   apiKeys: ApiKeys;
-  updateApiKeys: (keys: ApiKeys) => void;
-  hasValidKeys: boolean;
+  setApiKeys: (keys: ApiKeys) => void;
+  selectedModel: ModelType;
+  setSelectedModel: (model: ModelType) => void;
+  getCurrentApiKey: () => string;
 }
+
+const DEFAULT_KEYS: ApiKeys = {
+  openai: '',
+  anthropic: '',
+  gemini: ''
+};
 
 const ApiKeyContext = createContext<ApiKeyContextType | undefined>(undefined);
 
 export const ApiKeyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [apiKeys, setApiKeys] = useState<ApiKeys>({
-    openai: undefined,
-    anthropic: undefined,
-    gemini: undefined,
-    google: undefined,
-    chatgpt: undefined
-  });
-  const [hasValidKeys, setHasValidKeys] = useState(false);
+  const [apiKeys, setApiKeys] = useState<ApiKeys>(DEFAULT_KEYS);
+  const [selectedModel, setSelectedModel] = useState<ModelType>('chatgpt');
 
   useEffect(() => {
     // Load saved keys from localStorage on mount
     const savedKeys = localStorage.getItem('aiModelKeys');
+    const savedModel = localStorage.getItem('selectedModel') as ModelType;
+    
     if (savedKeys) {
-      const keys = JSON.parse(savedKeys);
-      setApiKeys(keys);
-      setHasValidKeys(Object.values(keys).some(key => key));
+      setApiKeys(JSON.parse(savedKeys));
+    }
+    
+    if (savedModel) {
+      setSelectedModel(savedModel);
     }
   }, []);
 
-  const updateApiKeys = (newKeys: ApiKeys) => {
+  const handleSetApiKeys = (newKeys: ApiKeys) => {
     setApiKeys(newKeys);
-    setHasValidKeys(Object.values(newKeys).some(key => key));
     localStorage.setItem('aiModelKeys', JSON.stringify(newKeys));
   };
 
+  const handleSetSelectedModel = (model: ModelType) => {
+    setSelectedModel(model);
+    localStorage.setItem('selectedModel', model);
+  };
+
+  const getCurrentApiKey = (): string => {
+    switch (selectedModel) {
+      case 'chatgpt':
+        return apiKeys.openai;
+      case 'anthropic':
+        return apiKeys.anthropic;
+      case 'gemini':
+        return apiKeys.gemini;
+      default:
+        return '';
+    }
+  };
+
+  const value: ApiKeyContextType = {
+    apiKeys,
+    setApiKeys: handleSetApiKeys,
+    selectedModel,
+    setSelectedModel: handleSetSelectedModel,
+    getCurrentApiKey
+  };
+
   return (
-    <ApiKeyContext.Provider value={{ apiKeys, updateApiKeys, hasValidKeys }}>
+    <ApiKeyContext.Provider value={value}>
       {children}
     </ApiKeyContext.Provider>
   );
