@@ -109,7 +109,7 @@ async function generateWithOpenAI(topic: string, apiKey: string): Promise<Keywor
   }
 }
 
-async function generateWithGemini(topic: string, apiKey: string): Promise<KeywordCategory[]> {
+async function generateWithGemini(prompt: string, apiKey: string): Promise<KeywordCategory[]> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -118,87 +118,122 @@ async function generateWithGemini(topic: string, apiKey: string): Promise<Keywor
       contents: [{ 
         role: "user", 
         parts: [{ 
-          text: `You are a SEO and keyword research expert. Generate a keyword analysis.
-          IMPORTANT: Return a JSON object with this EXACT structure. Do not include any other text or formatting:
+          text: `As an SEO and keyword research expert, analyze the topic "${prompt}" and generate keyword data.
+          
+          Generate a focused set of keywords with realistic metrics. Keep the response concise but comprehensive.
+          
+          Return a JSON object with this structure:
           {
             "categories": [
               {
-                "name": "Example Category",
+                "name": string,
                 "keywords": [
                   {
-                    "term": "example keyword",
-                    "volume": 1000,
-                    "competition": "Low",
-                    "difficulty": 30,
-                    "opportunity": 70,
-                    "cpc": 1.5,
-                    "intent": "Informational",
-                    "serpFeatures": ["Featured Snippet"],
-                    "trend": [100,110,120,130,140,150,160,170,180,190,200,210],
-                    "seasonality": "Stable"
+                    "term": string,
+                    "volume": number,
+                    "competition": "Low" | "Medium" | "High",
+                    "difficulty": number (1-100),
+                    "opportunity": number (1-100),
+                    "cpc": number,
+                    "intent": string,
+                    "serpFeatures": string[],
+                    "trend": number[],
+                    "seasonality": string
                   }
                 ],
                 "summary": {
-                  "totalVolume": 1000,
-                  "avgDifficulty": 30,
-                  "avgCpc": 1.5,
-                  "topIntent": "Informational",
-                  "growthRate": 10
+                  "totalVolume": number,
+                  "avgDifficulty": number,
+                  "avgCpc": number,
+                  "topIntent": string,
+                  "growthRate": number
                 }
               }
             ]
           }
 
-          Analyze this topic: ${topic}`
+          Rules:
+          1. Generate exactly 3 categories with 3-5 keywords each
+          2. Keep responses focused and concise
+          3. Use realistic values
+          4. Return valid JSON only
+          5. No explanations or additional text`
         }]
       }],
       generationConfig: {
-        temperature: 0.3, // Lower temperature for more consistent output
+        temperature: 0.3,
         topK: 20,
         topP: 0.8,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 4000, // Reduced to avoid truncation
       },
     });
 
     const text = result.response.text();
     
-    // Clean the response text
-    let cleanedText = text
-      .replace(/```(?:json|JSON)?\s*|\s*```/g, '') // Remove code blocks
-      .replace(/[\u201C\u201D]/g, '"') // Replace smart quotes
-      .replace(/[\r\n\t]/g, '') // Remove newlines, tabs
-      .trim();
-    
-    // Ensure the text starts with { and ends with }
-    cleanedText = cleanedText.substring(
-      cleanedText.indexOf('{'),
-      cleanedText.lastIndexOf('}') + 1
-    );
+    // Clean and validate the response
+    const cleanJSON = (input: string): string => {
+      try {
+        // Remove any non-JSON content
+        let cleaned = input.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+        
+        // Remove markdown and code blocks
+        cleaned = cleaned.replace(/```[^`]*```/g, '');
+        
+        // Fix common JSON issues
+        cleaned = cleaned
+          .replace(/[\u201C\u201D]/g, '"') // Fix smart quotes
+          .replace(/[\r\n\t]/g, ' ') // Replace newlines with spaces
+          .replace(/,\s*([\]}])/g, '$1') // Remove trailing commas
+          .replace(/([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":') // Fix unquoted property names
+          .replace(/:\s*'([^']*)'/g, ':"$1"') // Fix single quotes
+          .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .trim();
+
+        // Ensure the JSON is complete
+        if (!cleaned.endsWith('}')) {
+          throw new Error('Incomplete JSON response');
+        }
+
+        // Basic structure validation
+        const parsed = JSON.parse(cleaned);
+        if (!parsed.categories || !Array.isArray(parsed.categories)) {
+          throw new Error('Invalid response structure');
+        }
+
+        return cleaned;
+      } catch (error) {
+        console.error('JSON cleaning error:', error);
+        throw error;
+      }
+    };
 
     try {
-      const parsed = JSON.parse(cleanedText);
-      if (!parsed.categories || !Array.isArray(parsed.categories)) {
-        throw new Error('Invalid response structure: missing categories array');
-      }
-      return transformAIResponseToCategories(parsed);
+      const cleanedJSON = cleanJSON(text);
+      return transformAIResponseToCategories(JSON.parse(cleanedJSON));
     } catch (parseError) {
-      console.error('Failed to parse cleaned response:', parseError);
-      throw parseError; // Let the outer catch handle it
+      console.error('Failed to parse Gemini response:', parseError);
+      console.error('Raw response:', text);
+      throw new Error('Invalid response format from Gemini');
     }
-  } catch (error) {
+  } catch (error: any) {
+    // API error handling remains the same
+    if (error.message?.includes('SERVICE_DISABLED')) {
+      throw new Error(
+        'Google Generative AI API is not enabled. Please enable it in your Google Cloud Console and try again.'
+      );
+    } else if (error.message?.includes('PERMISSION_DENIED')) {
+      throw new Error(
+        'Invalid API key or insufficient permissions for Google Generative AI.'
+      );
+    } else if (error.message?.includes('QUOTA_EXCEEDED')) {
+      throw new Error(
+        'API quota exceeded for Google Generative AI. Please try again later.'
+      );
+    }
+    
     console.error('Gemini API error:', error);
-    // Return a default category with empty data
-    return [{
-      name: 'General',
-      keywords: [],
-      summary: {
-        totalVolume: 0,
-        avgDifficulty: 0,
-        avgCpc: 0,
-        topIntent: 'Informational',
-        growthRate: 0
-      }
-    }];
+    throw new Error('Failed to generate keywords with Gemini. Please try another model or check your API key.');
   }
 }
 

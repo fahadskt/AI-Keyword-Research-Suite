@@ -4,51 +4,55 @@ import { ResultsPanel } from '../components/ResultsPanel';
 import { KeywordCategory } from '../types';
 import { generateKeywordInsights } from '../services/aiService';
 import { useApiKeys, ModelType } from '../context/ApiKeyContext';
+import { AlertCircle } from 'lucide-react';
 
 export const KeywordResearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [categories, setCategories] = useState<KeywordCategory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { selectedModel, getCurrentApiKey } = useApiKeys();
+
+  const hasApiKey = Boolean(getCurrentApiKey());
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
-      alert('Please enter a keyword or topic');
+      setError('Please enter a keyword or topic');
       return;
     }
 
     const currentApiKey = getCurrentApiKey();
     if (!currentApiKey) {
-      alert('Please set your API key in settings');
+      setError('Please set your API key in settings');
       return;
     }
 
     setIsLoading(true);
+    setError(null);
+
     try {
-      // Generate keyword insights
       const insights = await generateKeywordInsights(
         searchTerm,
         currentApiKey,
         selectedModel as ModelType
       );
 
-      // Extract keywords from insights
       const allKeywords = insights.flatMap(category => 
         category.keywords.map(k => k.keyword)
       );
 
       setKeywords(allKeywords);
       setCategories(insights);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating keywords:', error);
-      alert('Failed to generate keywords. Please try again.');
+      setError(error.message || 'Failed to generate keywords. Please try again.');
+      setKeywords([]);
+      setCategories([]);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const hasApiKey = Boolean(getCurrentApiKey());
 
   return (
     <DashboardLayout 
@@ -57,12 +61,19 @@ export const KeywordResearch = () => {
         <button 
           className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:bg-gray-400"
           onClick={handleSearch}
-          disabled={isLoading}
+          disabled={isLoading || !hasApiKey}
         >
           {isLoading ? 'Researching...' : 'Research Keywords'}
         </button>
       }
     >
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+          <AlertCircle className="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+          <div className="text-red-700">{error}</div>
+        </div>
+      )}
+
       {/* Search Input */}
       <div className="mb-8">
         <div className="max-w-3xl">
@@ -79,7 +90,7 @@ export const KeywordResearch = () => {
               placeholder="e.g., digital marketing, SEO strategies..."
               disabled={isLoading}
               onKeyPress={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && hasApiKey) {
                   handleSearch();
                 }
               }}
@@ -87,7 +98,7 @@ export const KeywordResearch = () => {
             <button 
               className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:bg-gray-400"
               onClick={handleSearch}
-              disabled={isLoading}
+              disabled={isLoading || !hasApiKey}
             >
               {isLoading ? 'Searching...' : 'Search'}
             </button>
@@ -100,7 +111,6 @@ export const KeywordResearch = () => {
         </div>
       </div>
 
-      {/* Results */}
       <ResultsPanel 
         keywords={keywords}
         categories={categories}
