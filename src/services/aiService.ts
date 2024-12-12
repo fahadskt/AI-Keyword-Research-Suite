@@ -235,4 +235,26 @@ function transformAIResponseToCategories(response: any): KeywordCategory[] {
     console.error('Error transforming AI response:', error);
     throw new Error('Failed to process AI response data');
   }
+}
+
+export async function generateAIResponse(
+  prompt: string,
+  apiKey: string,
+  model: ModelType
+): Promise<any> {
+  try {
+    switch (model) {
+      case 'chatgpt':
+        return await generateWithOpenAI(prompt, apiKey);
+      case 'gemini':
+        return await generateWithGemini(prompt, apiKey);
+      case 'anthropic':
+        return await generateWithAnthropic(prompt, apiKey);
+      default:
+        throw new Error('Unsupported model');
+    }
+  } catch (error) {
+    console.error(`Error generating AI response with ${model}:`, error);
+    throw error;
+  }
 } 

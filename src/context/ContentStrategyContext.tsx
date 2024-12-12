@@ -1,127 +1,68 @@
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
-import { ContentStrategyState, ContentTopic, ContentCalendarItem, ContentInsight } from '../types/contentStrategy';
-import { contentStrategyService } from '../services/contentStrategyService';
+import React, { createContext, useState, useEffect } from 'react';
+import { ContentInsight, ContentTopic, ContentCalendarItem } from '../types/contentStrategy';
 
-type Action =
-  | { type: 'SET_LOADING' }
-  | { type: 'SET_ERROR'; payload: string }
-  | { type: 'SET_TOPICS'; payload: ContentTopic[] }
-  | { type: 'SET_CALENDAR'; payload: ContentCalendarItem[] }
-  | { type: 'SET_INSIGHTS'; payload: ContentInsight[] }
-  | { type: 'ADD_TOPIC'; payload: ContentTopic }
-  | { type: 'UPDATE_TOPIC'; payload: ContentTopic }
-  | { type: 'DELETE_TOPIC'; payload: string };
-
-const initialState: ContentStrategyState = {
-  topics: [],
-  calendar: [],
-  insights: [],
-  isLoading: false,
-  error: null,
-};
-
-const ContentStrategyContext = createContext<{
-  state: ContentStrategyState;
-  loadContentStrategy: () => Promise<void>;
-  generateTopics: (keywords: any[]) => Promise<void>;
-  updateTopic: (topic: ContentTopic) => Promise<void>;
-  deleteTopic: (topicId: string) => Promise<void>;
-} | null>(null);
-
-function contentStrategyReducer(state: ContentStrategyState, action: Action): ContentStrategyState {
-  switch (action.type) {
-    case 'SET_LOADING':
-      return { ...state, isLoading: true, error: null };
-    case 'SET_ERROR':
-      return { ...state, isLoading: false, error: action.payload };
-    case 'SET_TOPICS':
-      return { ...state, topics: action.payload, isLoading: false };
-    case 'SET_CALENDAR':
-      return { ...state, calendar: action.payload, isLoading: false };
-    case 'SET_INSIGHTS':
-      return { ...state, insights: action.payload, isLoading: false };
-    case 'ADD_TOPIC':
-      return { ...state, topics: [...state.topics, action.payload] };
-    case 'UPDATE_TOPIC':
-      return {
-        ...state,
-        topics: state.topics.map(topic =>
-          topic.id === action.payload.id ? action.payload : topic
-        ),
-      };
-    case 'DELETE_TOPIC':
-      return {
-        ...state,
-        topics: state.topics.filter(topic => topic.id !== action.payload),
-      };
-    default:
-      return state;
-  }
+interface ContentStrategyContextType {
+  insights: ContentInsight[];
+  topics: ContentTopic[];
+  calendar: ContentCalendarItem[];
+  loading: boolean;
+  error: string | null;
 }
 
-export function ContentStrategyProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(contentStrategyReducer, initialState);
+export const ContentStrategyContext = createContext<ContentStrategyContextType>({
+  insights: [],
+  topics: [],
+  calendar: [],
+  loading: false,
+  error: null,
+});
 
-  const loadContentStrategy = useCallback(async () => {
-    dispatch({ type: 'SET_LOADING' });
-    try {
-      const [calendar, insights] = await Promise.all([
-        contentStrategyService.getContentCalendar(),
-        contentStrategyService.getContentInsights(),
-      ]);
+export const ContentStrategyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [insights, setInsights] = useState<ContentInsight[]>([]);
+  const [topics, setTopics] = useState<ContentTopic[]>([]);
+  const [calendar, setCalendar] = useState<ContentCalendarItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-      dispatch({ type: 'SET_CALENDAR', payload: calendar });
-      dispatch({ type: 'SET_INSIGHTS', payload: insights });
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to load content strategy' });
-    }
-  }, []);
+  useEffect(() => {
+    const fetchContentStrategyData = async () => {
+      try {
+        setLoading(true);
+        // Replace these with actual API calls
+        const insightsResponse = await fetch('/api/content/insights');
+        const topicsResponse = await fetch('/api/content/topics');
+        const calendarResponse = await fetch('/api/content/calendar');
 
-  const generateTopics = useCallback(async (keywords: any[]) => {
-    dispatch({ type: 'SET_LOADING' });
-    try {
-      const topics = await contentStrategyService.generateTopics(keywords);
-      dispatch({ type: 'SET_TOPICS', payload: topics });
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to generate topics' });
-    }
-  }, []);
+        const [insightsData, topicsData, calendarData] = await Promise.all([
+          insightsResponse.json(),
+          topicsResponse.json(),
+          calendarResponse.json(),
+        ]);
 
-  const updateTopic = useCallback(async (topic: ContentTopic) => {
-    try {
-      dispatch({ type: 'UPDATE_TOPIC', payload: topic });
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to update topic' });
-    }
-  }, []);
+        setInsights(insightsData);
+        setTopics(topicsData);
+        setCalendar(calendarData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch content strategy data');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const deleteTopic = useCallback(async (topicId: string) => {
-    try {
-      dispatch({ type: 'DELETE_TOPIC', payload: topicId });
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete topic' });
-    }
+    fetchContentStrategyData();
   }, []);
 
   return (
     <ContentStrategyContext.Provider 
       value={{ 
-        state, 
-        loadContentStrategy, 
-        generateTopics, 
-        updateTopic, 
-        deleteTopic 
+        insights, 
+        topics, 
+        calendar, 
+        loading, 
+        error 
       }}
     >
       {children}
     </ContentStrategyContext.Provider>
   );
-}
-
-export function useContentStrategy() {
-  const context = useContext(ContentStrategyContext);
-  if (!context) {
-    throw new Error('useContentStrategy must be used within a ContentStrategyProvider');
-  }
-  return context;
-} 
+}; 

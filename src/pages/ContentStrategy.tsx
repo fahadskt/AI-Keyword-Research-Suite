@@ -1,52 +1,39 @@
-import React, { useEffect } from 'react';
-import { DashboardLayout } from '../components/layouts/DashboardLayout';
-import { ContentCalendar } from '../components/content/ContentCalendar';
+import React, { useContext } from 'react';
 import { ContentInsights } from '../components/content/ContentInsights';
 import { TopicsList } from '../components/content/TopicsList';
-import { useContentStrategy } from '../context/ContentStrategyContext';
+import { ContentCalendar } from '../components/content/ContentCalendar';
+import { ContentStrategyContext } from '../context/ContentStrategyContext';
+import { DashboardLayout } from '../components/layouts/DashboardLayout';
 
 export const ContentStrategy = () => {
-  const { state, loadContentStrategy } = useContentStrategy();
+  const { insights, topics, calendar, loading, error } = useContext(ContentStrategyContext);
 
-  useEffect(() => {
-    loadContentStrategy();
-  }, [loadContentStrategy]);
-
-  if (state.isLoading) {
+  if (loading) {
     return (
-      <DashboardLayout title="Content Strategy">
-        <div className="animate-pulse">
-          {/* Loading skeleton */}
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="h-64 bg-gray-200 rounded"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </div>
+      <DashboardLayout>
+        <div className="p-6">
+          <div>Loading content strategy data...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <div className="text-red-600">Error loading content strategy: {error}</div>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout 
-      title="Content Strategy"
-      actions={
-        <button className="btn-primary">Create New Topic</button>
-      }
-    >
-      {state.error && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-6">
-          {state.error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <ContentInsights insights={state.insights} />
-        <TopicsList topics={state.topics} />
-      </div>
-
-      <div className="mt-8">
-        <ContentCalendar calendar={state.calendar} />
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        <ContentInsights insights={insights} />
+        <TopicsList topics={topics} />
+        <ContentCalendar calendar={calendar} />
       </div>
     </DashboardLayout>
   );

@@ -1,91 +1,57 @@
-import { ContentTopic, ContentCalendarItem, ContentInsight } from '../types/contentStrategy';
-import { KeywordCategory } from '../types';
+import { ContentStrategy } from '../types/analysis';
+import { ModelType } from '../context/ApiKeyContext';
+import { generateAIResponse } from './aiService';
 
-const API_ENDPOINTS = {
-  GENERATE_TOPICS: '/api/content/generate-topics',
-  ANALYZE_CONTENT: '/api/content/analyze',
-  CALENDAR: '/api/content/calendar',
-  INSIGHTS: '/api/content/insights',
-};
-
-export const contentStrategyService = {
-  async generateTopics(keywords: KeywordCategory[]): Promise<ContentTopic[]> {
-    try {
-      const response = await fetch(API_ENDPOINTS.GENERATE_TOPICS, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keywords }),
-      });
-
-      if (!response.ok) throw new Error('Failed to generate topics');
-      return response.json();
-    } catch (error) {
-      console.error('Error generating topics:', error);
-      throw error;
+const CONTENT_STRATEGY_PROMPT = `Generate a comprehensive content strategy.
+Return the strategy in this exact JSON structure:
+{
+  "recommendedTopics": [
+    {
+      "topic": string,
+      "type": string,
+      "estimatedImpact": number,
+      "targetKeywords": string[],
+      "outline": string[],
+      "recommendedAngle": string
     }
-  },
-
-  async analyzeContent(content: string): Promise<{
-    seoScore: number;
-    readabilityScore: number;
-    suggestions: string[];
-  }> {
-    try {
-      const response = await fetch(API_ENDPOINTS.ANALYZE_CONTENT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-      });
-
-      if (!response.ok) throw new Error('Failed to analyze content');
-      return response.json();
-    } catch (error) {
-      console.error('Error analyzing content:', error);
-      throw error;
+  ],
+  "contentCalendar": [
+    {
+      "month": string,
+      "topics": string[],
+      "goals": string[]
     }
-  },
-
-  async getContentCalendar(): Promise<ContentCalendarItem[]> {
-    try {
-      const response = await fetch(API_ENDPOINTS.CALENDAR);
-      if (!response.ok) throw new Error('Failed to fetch content calendar');
-      return response.json();
-    } catch (error) {
-      console.error('Error fetching calendar:', error);
-      throw error;
+  ],
+  "contentTypes": [
+    {
+      "type": string,
+      "effectiveness": number,
+      "recommendedFrequency": string,
+      "bestPractices": string[]
     }
-  },
+  ]
+}`;
 
-  async getContentInsights(): Promise<ContentInsight[]> {
-    try {
-      const response = await fetch(API_ENDPOINTS.INSIGHTS);
-      if (!response.ok) throw new Error('Failed to fetch content insights');
-      return response.json();
-    } catch (error) {
-      console.error('Error fetching insights:', error);
-      throw error;
-    }
-  },
-
-  async generateContentBrief(topic: ContentTopic): Promise<{
-    title: string;
-    outline: string[];
-    keywords: string[];
-    references: string[];
-    guidelines: string[];
-  }> {
-    try {
-      const response = await fetch('/api/ai/generate-brief', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic }),
-      });
-
-      if (!response.ok) throw new Error('Failed to generate content brief');
-      return response.json();
-    } catch (error) {
-      console.error('Error generating brief:', error);
-      throw error;
-    }
+export async function generateContentStrategy(
+  niche: string,
+  keywords: string[],
+  apiKey: string,
+  model: ModelType
+): Promise<ContentStrategy> {
+  try {
+    const response = await generateAIResponse(
+      `${CONTENT_STRATEGY_PROMPT}\n\nNiche: ${niche}\nTarget Keywords: ${keywords.join(', ')}`,
+      apiKey,
+      model
+    );
+    return transformContentStrategy(response);
+  } catch (error) {
+    console.error('Error generating content strategy:', error);
+    throw new Error('Failed to generate content strategy. Please try again.');
   }
-}; 
+}
+
+function transformContentStrategy(response: any): ContentStrategy {
+  // Add validation and transformation logic
+  return response;
+} 

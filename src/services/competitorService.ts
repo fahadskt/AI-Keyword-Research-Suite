@@ -1,10 +1,34 @@
 import { CompetitorMetric, MarketShareData, ContentGap } from '../types/competitor';
+import { CompetitorAnalysis } from '../types/analysis';
+import { ModelType } from '../context/ApiKeyContext';
+import { generateAIResponse } from './aiService';
 
 const API_ENDPOINTS = {
   COMPETITOR_METRICS: '/api/competitors/metrics',
   MARKET_SHARE: '/api/competitors/market-share',
   CONTENT_GAPS: '/api/competitors/content-gaps',
 };
+
+const COMPETITOR_PROMPT = `Analyze the following business/website and its competitors.
+Return a detailed analysis in this exact JSON structure:
+{
+  "topCompetitors": [
+    {
+      "domain": string,
+      "strengths": string[],
+      "weaknesses": string[],
+      "contentGaps": string[],
+      "rankingKeywords": string[],
+      "marketShare": number
+    }
+  ],
+  "competitiveLandscape": {
+    "difficultyLevel": "Low" | "Medium" | "High",
+    "entryBarriers": string[],
+    "opportunities": string[],
+    "threats": string[]
+  }
+}`;
 
 export const competitorService = {
   async getCompetitorMetrics(domain: string): Promise<CompetitorMetric[]> {
@@ -66,5 +90,28 @@ export const competitorService = {
       console.error('Error analyzing competitor:', error);
       throw error;
     }
+  },
+
+  async analyzeCompetitors(
+    domain: string,
+    apiKey: string,
+    model: ModelType
+  ): Promise<CompetitorAnalysis> {
+    try {
+      const response = await generateAIResponse(
+        `${COMPETITOR_PROMPT}\n\nAnalyze this domain: ${domain}`,
+        apiKey,
+        model
+      );
+      return transformCompetitorResponse(response);
+    } catch (error) {
+      console.error('Error analyzing competitors:', error);
+      throw new Error('Failed to analyze competitors. Please try again.');
+    }
   }
-}; 
+};
+
+function transformCompetitorResponse(response: any): CompetitorAnalysis {
+  // Add validation and transformation logic
+  return response;
+} 

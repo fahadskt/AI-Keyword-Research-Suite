@@ -25,7 +25,7 @@ export const ContentInsights: React.FC<Props> = ({ insights }) => {
       <h2 className="text-lg font-medium mb-6">Content Insights</h2>
       
       <div className="space-y-4">
-        {insights.map((insight, index) => (
+        {insights?.map((insight, index) => (
           <div 
             key={index}
             className={`p-4 rounded-lg border ${
@@ -54,7 +54,7 @@ export const ContentInsights: React.FC<Props> = ({ insights }) => {
               </div>
             </div>
           </div>
-        ))}
+        )) || <div>No insights available</div>}
       </div>
     </div>
   );

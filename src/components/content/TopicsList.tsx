@@ -42,7 +42,7 @@ export const TopicsList: React.FC<Props> = ({ topics }) => {
       <h2 className="text-lg font-medium mb-6">Content Topics</h2>
       
       <div className="space-y-4">
-        {topics.map((topic) => (
+        {topics?.map((topic) => (
           <div key={topic.id} className="border rounded-lg overflow-hidden">
             <div 
               className="p-4 cursor-pointer hover:bg-gray-50"
@@ -120,7 +120,7 @@ export const TopicsList: React.FC<Props> = ({ topics }) => {
               </div>
             )}
           </div>
-        ))}
+        )) || <div>No topics available</div>}
       </div>
     </div>
   );
