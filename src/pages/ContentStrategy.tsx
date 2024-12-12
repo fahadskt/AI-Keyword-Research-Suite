@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { ContentInsights } from '../components/content/ContentInsights';
 import { TopicsList } from '../components/content/TopicsList';
 import { ContentCalendar } from '../components/content/ContentCalendar';
@@ -10,7 +10,7 @@ export const ContentStrategy = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout title="Content Strategy">
         <div className="p-6">
           <div>Loading content strategy data...</div>
         </div>
@@ -20,7 +20,7 @@ export const ContentStrategy = () => {
 
   if (error) {
     return (
-      <DashboardLayout>
+      <DashboardLayout title="Content Strategy">
         <div className="p-6">
           <div className="text-red-600">Error loading content strategy: {error}</div>
         </div>
@@ -29,7 +29,7 @@ export const ContentStrategy = () => {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout title="Content Strategy">
       <div className="p-6 space-y-6">
         <ContentInsights insights={insights} />
         <TopicsList topics={topics} />
