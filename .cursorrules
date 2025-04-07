@@ -1,0 +1,90 @@
+# AI Keyword Research Suite - Project Intelligence
+
+## Code Structure Patterns
+
+### Module Organization
+- Each feature module (Keyword Research, Competitor Analysis, etc.) follows a consistent pattern:
+  - Page component in `src/pages/`
+  - Related components in `src/components/`
+  - Context provider in `src/context/` (if needed)
+  - Service layer in `src/services/`
+  - Type definitions in `src/types/`
+
+### Component Structure
+- UI components are built as functional components with React hooks
+- Page components use the DashboardLayout wrapper for consistent UI
+- Most complex components are split into smaller, focused sub-components
+
+### State Management
+- Context providers use a consistent pattern with:
+  - State declaration
+  - Action methods
+  - Effect hooks for initialization
+  - Value provider
+
+### API Integration
+- AI service calls follow the pattern:
+  1. Format prompt
+  2. Call API based on selected model
+  3. Parse and validate response
+  4. Transform to application data structures
+  5. Handle errors consistently
+
+## File Naming and Location Conventions
+
+### Directory Structure
+- `src/pages/`: Page-level components
+- `src/components/`: Reusable UI components
+- `src/context/`: Context providers
+- `src/services/`: API and data services
+- `src/types/`: TypeScript interfaces and types
+- `src/utils/`: Utility functions
+
+### Naming Conventions
+- PascalCase for component files: `KeywordResearch.tsx`
+- camelCase for utility and service files: `aiService.ts`
+- Context files use the pattern: `[Feature]Context.tsx`
+- Service files use the pattern: `[feature]Service.ts`
+- Type files use the pattern: `[feature].ts` or `index.ts` for shared types
+
+## Development Workflow
+
+### Adding New Features
+1. Define types in appropriate types file
+2. Create service layer functions if needed
+3. Implement UI components
+4. Connect to context if state management is needed
+5. Add to page component
+
+### Error Handling Pattern
+- Service layer captures and transforms API errors
+- UI components display user-friendly error messages
+- Errors related to AI providers include specific guidance
+
+## Styling Patterns
+
+### Tailwind Usage
+- Components use Tailwind utility classes directly
+- Common patterns use consistent class combinations
+- Responsive design uses Tailwind breakpoints: sm, md, lg, xl
+
+### Color Scheme
+- Primary: violet-600
+- Secondary: gray-700
+- Accent: amber-500
+- Success: green-500
+- Error: red-500
+- Background: gray-50
+- Card background: white
+
+## User Preferences
+
+### AI Provider Selection
+- Default is OpenAI (ChatGPT)
+- Users can switch between providers in Settings
+- Provider-specific prompting is handled internally
+
+### Data Visualization Preferences
+- Charts should be interactive where possible
+- Data tables should be sortable
+- Metrics should use consistent formatting 
